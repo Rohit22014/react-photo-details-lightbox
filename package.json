@@ -32,7 +32,7 @@
     "lint": "eslint . --max-warnings=0",
     "lint:fix": "eslint . --fix",
     "test": "npm run test --workspace react-photo-details-lightbox",
-    "test:e2e": "npm run test:e2e --workspace @photo-details/docs",
+    "test:e2e": "npm run build:package && npm run test:e2e --workspace @photo-details/docs",
     "typecheck": "npm run build:package && npm run typecheck --workspaces --if-present",
     "validate": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run build && npm run check:package"
   },
