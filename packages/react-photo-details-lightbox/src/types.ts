@@ -6,11 +6,7 @@ import type {
   SlideImage,
 } from "yet-another-react-lightbox";
 
-export type DetailLevel =
-  | "minimum"
-  | "information"
-  | "detailed"
-  | "custom";
+export type DetailLevel = "minimum" | "information" | "detailed" | "custom";
 
 export type PhotoDetailsTheme = "dark" | "light" | "system";
 
@@ -192,10 +188,7 @@ export type PhotoSlide = SlideImage & {
   photoMetadata?: PhotoMetadata;
 };
 
-export type PhotoDetailsLightboxProps = Omit<
-  LightboxExternalProps,
-  "plugins"
-> &
+export type PhotoDetailsLightboxProps = Omit<LightboxExternalProps, "plugins"> &
   PhotoDetailsSettings & {
     plugins?: Plugin[];
   };
@@ -207,14 +200,6 @@ declare module "yet-another-react-lightbox" {
 
   interface LightboxProps {
     photoDetails?: PhotoDetailsSettings;
-  }
-
-  interface Labels {
-    "Photo details"?: string;
-    "Hide photo details"?: string;
-    "Expand photo details"?: string;
-    "Collapse photo details"?: string;
-    "Choose detail level"?: string;
   }
 
   interface ToolbarButtonKeys {

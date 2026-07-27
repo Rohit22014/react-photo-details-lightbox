@@ -2,6 +2,10 @@
 
 A responsive, accessible photo metadata inspector for [Yet Another React Lightbox](https://yet-another-react-lightbox.com/). Use the ready-made wrapper or add it to an existing YARL setup as a plugin.
 
+[Live demo](https://photo-details-lightbox.rohitdinanath.chatgpt.site) ·
+[Source](https://github.com/Rohit22014/react-photo-details-lightbox) ·
+[Issues](https://github.com/Rohit22014/react-photo-details-lightbox/issues)
+
 > The package is being developed in this repository. The commands below describe the intended registry package; check your registry before depending on it.
 
 ## Install
@@ -218,14 +222,13 @@ export function GalleryLightbox({ slides }: { slides: Slides }) {
 import dynamic from "next/dynamic";
 import type { PhotoDetailsLightboxProps } from "react-photo-details-lightbox";
 
-const ClientOnlyPhotoDetailsLightbox =
-  dynamic<PhotoDetailsLightboxProps>(
-    () =>
-      import("react-photo-details-lightbox").then(
-        (module) => module.PhotoDetailsLightbox,
-      ),
-    { ssr: false },
-  );
+const ClientOnlyPhotoDetailsLightbox = dynamic<PhotoDetailsLightboxProps>(
+  () =>
+    import("react-photo-details-lightbox").then(
+      (module) => module.PhotoDetailsLightbox,
+    ),
+  { ssr: false },
+);
 
 export function ClientOnlyLightbox(props: PhotoDetailsLightboxProps) {
   return <ClientOnlyPhotoDetailsLightbox {...props} />;
@@ -265,7 +268,14 @@ The EXIF parser is lazy and optional. If your package manager omits optional dep
 npm install exifr
 ```
 
-Embedded GPS and authorship fields can be sensitive. Obtain permission before uploading or displaying them.
+Embedded GPS coordinates, creator contact details, and camera or lens serial
+numbers can be sensitive. Obtain permission before uploading or displaying
+them.
+
+Prefer browser-provided `File` or `Blob` values. If extraction runs on a
+server, never pass an untrusted path or URL directly to the parser. Validate
+the protocol and destination against an allowlist, block private-network
+targets, and enforce download size and timeout limits.
 
 ## API
 
@@ -294,6 +304,23 @@ import {
 } from "react-photo-details-lightbox/exif";
 ```
 
+## Project policies
+
+See the repository's
+[contribution guide](https://github.com/Rohit22014/react-photo-details-lightbox/blob/main/CONTRIBUTING.md),
+[security policy](https://github.com/Rohit22014/react-photo-details-lightbox/blob/main/SECURITY.md),
+and [changelog](https://github.com/Rohit22014/react-photo-details-lightbox/blob/main/CHANGELOG.md).
+
+This package builds on Yet Another React Lightbox but is independently
+maintained and is not affiliated with or endorsed by its original author.
+
+## AI assistance
+
+This project was generated and developed with the assistance of AI tools.
+The maintainers have reviewed and adapted the resulting work and remain
+responsible for its use, maintenance, and distribution.
+
 ## License
 
-MIT
+[MIT](./LICENSE). Yet Another React Lightbox remains licensed by its original
+author under the MIT License; see [Third-Party Notices](./THIRD_PARTY_NOTICES.md).

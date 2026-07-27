@@ -18,14 +18,11 @@ describe("detail presets", () => {
   });
 
   it("removes missing fields and empty sections", () => {
-    const sections = resolveDetailSections(
-      getPresetSections("detailed"),
-      {
-        level: "detailed",
-        metadata: slide.photoMetadata!,
-        slide,
-      },
-    );
+    const sections = resolveDetailSections(getPresetSections("detailed"), {
+      level: "detailed",
+      metadata: slide.photoMetadata!,
+      slide,
+    });
 
     expect(sections.some((section) => section.id === "equipment")).toBe(true);
     expect(sections.some((section) => section.id === "file")).toBe(false);

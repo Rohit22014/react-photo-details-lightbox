@@ -15,6 +15,7 @@ import {
   isImageSlide,
   useController,
   useLightboxState,
+  type Label,
 } from "yet-another-react-lightbox";
 import { usePhotoDetails } from "./context";
 import { getPresetSections, resolveDetailSections } from "./presets";
@@ -48,10 +49,7 @@ function Field({ field }: { field: ResolvedDetailField }) {
   return <DefaultField field={field} />;
 }
 
-function DefaultSection({
-  section,
-  children,
-}: PhotoDetailsSectionRenderProps) {
+function DefaultSection({ section, children }: PhotoDetailsSectionRenderProps) {
   return (
     <section className="rpdl__section" data-section={section.id}>
       {section.title ? <h3>{section.title}</h3> : null}
@@ -81,7 +79,7 @@ function EmptyDetails() {
   );
 }
 
-function metadataForCurrentSlide(): {
+function useCurrentSlideMetadata(): {
   metadata?: PhotoMetadata;
   slide: ReturnType<typeof useLightboxState>["currentSlide"];
 } {
@@ -97,15 +95,9 @@ function metadataForCurrentSlide(): {
 export function PhotoDetailsPanel() {
   const { currentIndex, slides } = useLightboxState();
   const { containerRef } = useController();
-  const {
-    availableLevels,
-    labels,
-    level,
-    setLevel,
-    settings,
-    theme,
-  } = usePhotoDetails();
-  const { metadata, slide } = metadataForCurrentSlide();
+  const { availableLevels, labels, level, setLevel, settings, theme } =
+    usePhotoDetails();
+  const { metadata, slide } = useCurrentSlideMetadata();
   const [sheetExpanded, setSheetExpanded] = useState(true);
   const dragStart = useRef<number | null>(null);
   const dragged = useRef(false);
@@ -114,7 +106,7 @@ export function PhotoDetailsPanel() {
     if (!slide || !metadata || level === "minimum") return [];
     const source =
       level === "custom"
-        ? settings.customSections ?? []
+        ? (settings.customSections ?? [])
         : getPresetSections(level, settings.formatters);
     return resolveDetailSections(
       source,
@@ -163,15 +155,13 @@ export function PhotoDetailsPanel() {
           ))}
         </div>
       </Fragment>
+    ) : settings.renderDetails?.empty ? (
+      settings.renderDetails.empty({
+        level,
+        ...(slide ? { slide } : {}),
+      })
     ) : (
-      settings.renderDetails?.empty ? (
-        settings.renderDetails.empty({
-          level,
-          ...(slide ? { slide } : {}),
-        })
-      ) : (
-        <EmptyDetails />
-      )
+      <EmptyDetails />
     );
 
   const content = (
@@ -213,9 +203,7 @@ export function PhotoDetailsPanel() {
               aria-label="Choose detail level"
               data-testid="photo-detail-level-select"
               value={level}
-              onChange={(event) =>
-                setLevel(event.target.value as typeof level)
-              }
+              onChange={(event) => setLevel(event.target.value as typeof level)}
             >
               {availableLevels.map((availableLevel) => (
                 <option key={availableLevel} value={availableLevel}>
@@ -269,7 +257,7 @@ export function PhotoDetailsButton() {
     <IconButton
       data-testid="photo-details-toggle"
       icon={DetailsIcon}
-      label={label}
+      label={label as Label}
       onClick={toggleDetails}
       className={expanded ? "rpdl__toolbar-button--active" : undefined}
     />

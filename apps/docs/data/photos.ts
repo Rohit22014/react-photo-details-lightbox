@@ -5,8 +5,14 @@ interface DemoPhoto {
   width: number;
   height: number;
   alt: string;
+  attribution: {
+    photographer: string;
+    url: string;
+  };
   photoMetadata: PhotoMetadata;
 }
+
+const unsplashLicenseUrl = "https://unsplash.com/license";
 
 export const photos = [
   {
@@ -14,6 +20,10 @@ export const photos = [
     width: 2400,
     height: 1600,
     alt: "A lone hiker standing on a sunlit mountain ridge",
+    attribution: {
+      photographer: "Urban Vintage",
+      url: "https://unsplash.com/photos/landscape-photography-of-mountain-hit-by-sun-rays-78A265wPiO4",
+    },
     photoMetadata: {
       title: "Light Across the Ridge",
       caption:
@@ -48,12 +58,16 @@ export const photos = [
         size: 74448896,
       },
       creator: {
-        name: "Unsplash contributor",
+        name: "Urban Vintage",
+        website:
+          "https://unsplash.com/photos/landscape-photography-of-mountain-hit-by-sun-rays-78A265wPiO4",
       },
-      copyright: "Illustrative metadata · image via Unsplash",
+      copyright: "Photo by Urban Vintage · Unsplash",
       license: {
         name: "Unsplash License",
+        url: unsplashLicenseUrl,
       },
+      credit: "Photo by Urban Vintage on Unsplash",
       keywords: ["ridge", "weather", "scale", "Scotland"],
     },
   },
@@ -62,6 +76,10 @@ export const photos = [
     width: 2400,
     height: 1600,
     alt: "Clear turquoise water meeting a pale beach beneath open sky",
+    attribution: {
+      photographer: "Sean Oulashin",
+      url: "https://unsplash.com/photos/seashore-during-golden-hour-KMn4VEeEPR8",
+    },
     photoMetadata: {
       title: "After the Trade Winds",
       caption:
@@ -95,12 +113,16 @@ export const photos = [
         size: 102760448,
       },
       creator: {
-        name: "Unsplash contributor",
+        name: "Sean Oulashin",
+        website:
+          "https://unsplash.com/photos/seashore-during-golden-hour-KMn4VEeEPR8",
       },
-      copyright: "Illustrative metadata · image via Unsplash",
+      copyright: "Photo by Sean Oulashin · Unsplash",
       license: {
         name: "Unsplash License",
+        url: unsplashLicenseUrl,
       },
+      credit: "Photo by Sean Oulashin on Unsplash",
       keywords: ["ocean", "sandbar", "blue", "Bahamas"],
     },
   },
@@ -109,6 +131,10 @@ export const photos = [
     width: 1600,
     height: 2400,
     alt: "Sandstone buttes rising from a vast ochre desert",
+    attribution: {
+      photographer: "Ganapathy Kumar",
+      url: "https://unsplash.com/photos/landscape-photography-of-rock-formation-L75D18aVal8",
+    },
     photoMetadata: {
       title: "The Long Measure",
       caption:
@@ -142,12 +168,16 @@ export const photos = [
         size: 207618048,
       },
       creator: {
-        name: "Unsplash contributor",
+        name: "Ganapathy Kumar",
+        website:
+          "https://unsplash.com/photos/landscape-photography-of-rock-formation-L75D18aVal8",
       },
-      copyright: "Illustrative metadata · image via Unsplash",
+      copyright: "Photo by Ganapathy Kumar · Unsplash",
       license: {
         name: "Unsplash License",
+        url: unsplashLicenseUrl,
       },
+      credit: "Photo by Ganapathy Kumar on Unsplash",
       keywords: ["desert", "scale", "Arizona", "sandstone"],
     },
   },
@@ -156,6 +186,10 @@ export const photos = [
     width: 2400,
     height: 1600,
     alt: "Sunbeams passing between tall trees in a green forest",
+    attribution: {
+      photographer: "Lukasz Szmigiel",
+      url: "https://unsplash.com/photos/forest-trees-jFCViYFYcus",
+    },
     photoMetadata: {
       title: "Understory, 07:42",
       caption:
@@ -189,12 +223,15 @@ export const photos = [
         size: 85327872,
       },
       creator: {
-        name: "Unsplash contributor",
+        name: "Lukasz Szmigiel",
+        website: "https://unsplash.com/photos/forest-trees-jFCViYFYcus",
       },
-      copyright: "Illustrative metadata · image via Unsplash",
+      copyright: "Photo by Lukasz Szmigiel · Unsplash",
       license: {
         name: "Unsplash License",
+        url: unsplashLicenseUrl,
       },
+      credit: "Photo by Lukasz Szmigiel on Unsplash",
       keywords: ["forest", "trail", "Germany", "morning"],
     },
   },
@@ -203,6 +240,10 @@ export const photos = [
     width: 2400,
     height: 1600,
     alt: "A misty hillside meadow glowing at sunrise",
+    attribution: {
+      photographer: "Dawid Zawiła",
+      url: "https://unsplash.com/photos/trees-under-cloudy-sky-during-sunset--G3rw6Y02D0",
+    },
     photoMetadata: {
       title: "First Light, Upper Meadow",
       caption:
@@ -236,12 +277,16 @@ export const photos = [
         size: 91357184,
       },
       creator: {
-        name: "Unsplash contributor",
+        name: "Dawid Zawiła",
+        website:
+          "https://unsplash.com/photos/trees-under-cloudy-sky-during-sunset--G3rw6Y02D0",
       },
-      copyright: "Illustrative metadata · image via Unsplash",
+      copyright: "Photo by Dawid Zawiła · Unsplash",
       license: {
         name: "Unsplash License",
+        url: unsplashLicenseUrl,
       },
+      credit: "Photo by Dawid Zawiła on Unsplash",
       keywords: ["sunrise", "meadow", "Poland", "mist"],
     },
   },
@@ -250,6 +295,10 @@ export const photos = [
     width: 2400,
     height: 1600,
     alt: "Wooden rowboats crossing a turquoise lake below steep peaks",
+    attribution: {
+      photographer: "Pietro De Grandi",
+      url: "https://unsplash.com/photos/three-brown-wooden-boat-on-blue-lake-water-taken-at-daytime-T7K4aEPoGGk",
+    },
     photoMetadata: {
       title: "Crossing Lago di Braies",
       caption:
@@ -283,12 +332,16 @@ export const photos = [
         size: 218103808,
       },
       creator: {
-        name: "Unsplash contributor",
+        name: "Pietro De Grandi",
+        website:
+          "https://unsplash.com/photos/three-brown-wooden-boat-on-blue-lake-water-taken-at-daytime-T7K4aEPoGGk",
       },
-      copyright: "Illustrative metadata · image via Unsplash",
+      copyright: "Photo by Pietro De Grandi · Unsplash",
       license: {
         name: "Unsplash License",
+        url: unsplashLicenseUrl,
       },
+      credit: "Photo by Pietro De Grandi on Unsplash",
       keywords: ["Dolomites", "mountain", "lake", "evening"],
     },
   },

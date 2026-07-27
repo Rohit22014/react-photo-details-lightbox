@@ -69,7 +69,9 @@ export const defaultFormatters: PhotoDetailsFormatters = {
     if (Array.isArray(value)) return value.join(" · ");
     if (typeof value === "object") {
       return Object.values(value as Record<string, unknown>)
-        .filter((entry) => entry !== null && entry !== undefined && entry !== "")
+        .filter(
+          (entry) => entry !== null && entry !== undefined && entry !== "",
+        )
         .join(" ");
     }
     return String(value);

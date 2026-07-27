@@ -1,8 +1,12 @@
 import { PhotoGallery } from "@/components/photo-gallery";
+import Image from "next/image";
 
 export const runtime = "nodejs";
 
-const installCommand = "npm install react-photo-details-lightbox yet-another-react-lightbox";
+const installCommand =
+  "npm install react-photo-details-lightbox yet-another-react-lightbox";
+const repositoryUrl =
+  "https://github.com/Rohit22014/react-photo-details-lightbox";
 
 const codeSample = `import { PhotoDetailsLightbox } from "react-photo-details-lightbox";
 import "yet-another-react-lightbox/styles.css";
@@ -48,9 +52,14 @@ export default function HomePage() {
           <a href="#demo">Demo</a>
           <a href="#features">Why it exists</a>
           <a href="#api">API</a>
-          <a className="nav-github" href="#api">
-            Install
-            <span aria-hidden="true">↓</span>
+          <a
+            className="nav-github"
+            href={repositoryUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            GitHub
+            <span aria-hidden="true">↗</span>
           </a>
         </nav>
       </header>
@@ -82,11 +91,13 @@ export default function HomePage() {
 
         <div className="hero-art" aria-hidden="true">
           <div className="hero-photo">
-            <img
+            <Image
               src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1800&q=88"
               alt=""
-              width="1800"
-              height="1200"
+              width={1800}
+              height={1200}
+              preload
+              sizes="(max-width: 760px) 100vw, 45vw"
             />
             <span className="crop-mark crop-mark-top" />
             <span className="crop-mark crop-mark-bottom" />
@@ -124,7 +135,11 @@ export default function HomePage() {
               <h3>{feature.title}</h3>
               <p>{feature.body}</p>
               <span className="feature-glyph" aria-hidden="true">
-                {feature.number === "01" ? "⌁" : feature.number === "02" ? "⌖" : "◫"}
+                {feature.number === "01"
+                  ? "⌁"
+                  : feature.number === "02"
+                    ? "⌖"
+                    : "◫"}
               </span>
             </article>
           ))}
@@ -138,8 +153,8 @@ export default function HomePage() {
             <h2>Look closer.</h2>
           </div>
           <p>
-            Select a detail level, then open any frame. Navigate, zoom and inspect
-            exactly as your audience would.
+            Select a detail level, then open any frame. Navigate, zoom and
+            inspect exactly as your audience would.
           </p>
         </div>
         <PhotoGallery />
@@ -212,8 +227,20 @@ export default function HomePage() {
           </span>
           <span>Photo Details</span>
         </a>
-        <p>MIT licensed · Built for the React photography community</p>
-        <p>© 2026</p>
+        <div className="footer-links">
+          <a href={repositoryUrl} target="_blank" rel="noreferrer">
+            GitHub
+          </a>
+          <a href="/privacy">Privacy</a>
+          <a
+            href={`${repositoryUrl}/blob/main/LICENSE`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            MIT License
+          </a>
+        </div>
+        <p>© 2026 Photo Details</p>
       </footer>
     </main>
   );

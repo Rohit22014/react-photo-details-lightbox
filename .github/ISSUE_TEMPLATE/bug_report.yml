@@ -1,0 +1,79 @@
+name: Bug report
+description: Report a reproducible problem with the package or demo.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem. Remove private photographs, GPS coordinates, serial numbers, creator emails, and credentials before posting.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the actual and expected behavior.
+      placeholder: The lightbox… I expected…
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Link a small repository or provide the shortest code sample that reproduces the issue.
+    validations:
+      required: true
+
+  - type: input
+    id: package-version
+    attributes:
+      label: Package version
+      placeholder: 0.1.0
+    validations:
+      required: true
+
+  - type: input
+    id: peer-versions
+    attributes:
+      label: React, Next.js, and Yet Another React Lightbox versions
+      placeholder: React 19.2, Next.js 16.2, YARL 3.32
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      multiple: true
+      options:
+        - Next.js App Router
+        - Next.js Pages Router
+        - Vite
+        - Another React framework
+        - Browser-only reproduction
+    validations:
+      required: true
+
+  - type: input
+    id: browsers
+    attributes:
+      label: Browser and operating system
+      placeholder: Chrome 138 on macOS 16
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Add sanitized logs, screenshots, or accessibility details if useful.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues for this problem.
+          required: true
+        - label: I removed sensitive metadata and only shared images I am authorized to share.
+          required: true

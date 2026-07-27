@@ -22,7 +22,10 @@ function dimensions(metadata: PhotoMetadata) {
   return width && height ? `${width} × ${height} px` : undefined;
 }
 
-function coordinates(metadata: PhotoMetadata, formatters: PhotoDetailsFormatters) {
+function coordinates(
+  metadata: PhotoMetadata,
+  formatters: PhotoDetailsFormatters,
+) {
   const latitude = metadata.location?.latitude;
   const longitude = metadata.location?.longitude;
   return typeof latitude === "number" && typeof longitude === "number"
@@ -46,8 +49,7 @@ export function getPresetSections(
           label: "Captured",
           getValue: ({ metadata }) =>
             metadata.capturedAt ?? metadata.captureDate,
-          format: (value) =>
-            formatters.date(value as string | Date),
+          format: (value) => formatters.date(value as string | Date),
         },
         { id: "location", label: "Location", path: "location.name" },
       ],
@@ -65,8 +67,7 @@ export function getPresetSections(
         {
           id: "story",
           label: "Field notes",
-          getValue: ({ metadata }) =>
-            metadata.story ?? metadata.description,
+          getValue: ({ metadata }) => metadata.story ?? metadata.description,
         },
       ],
     },
@@ -110,23 +111,20 @@ export function getPresetSections(
           id: "aperture",
           label: "Aperture",
           path: "exposure.aperture",
-          format: (value) =>
-            formatters.aperture(value as number | string),
+          format: (value) => formatters.aperture(value as number | string),
         },
         {
           id: "shutter",
           label: "Shutter",
           path: "exposure.shutterSpeed",
-          format: (value) =>
-            formatters.shutterSpeed(value as number | string),
+          format: (value) => formatters.shutterSpeed(value as number | string),
         },
         { id: "iso", label: "ISO", path: "exposure.iso" },
         {
           id: "focal-length",
           label: "Focal length",
           path: "exposure.focalLength",
-          format: (value) =>
-            formatters.focalLength(value as number | string),
+          format: (value) => formatters.focalLength(value as number | string),
         },
         {
           id: "compensation",
@@ -232,7 +230,8 @@ export function resolveDetailSections(
           : field.hidden;
       if (fieldHidden) return [];
 
-      const rawValue = field.getValue?.(context) ??
+      const rawValue =
+        field.getValue?.(context) ??
         (field.path ? getPathValue(context.metadata, field.path) : undefined);
       if (isEmpty(rawValue)) return [];
 

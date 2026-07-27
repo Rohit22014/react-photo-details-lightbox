@@ -11,12 +11,7 @@ export default defineConfig({
   clean: true,
   sourcemap: true,
   splitting: false,
-  external: [
-    "react",
-    "react-dom",
-    "yet-another-react-lightbox",
-    "exifr",
-  ],
+  external: ["react", "react-dom", "yet-another-react-lightbox", "exifr"],
   onSuccess: async () => {
     await copyFile("src/styles.css", "dist/styles.css");
   },

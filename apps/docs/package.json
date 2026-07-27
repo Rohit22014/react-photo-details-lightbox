@@ -1,7 +1,9 @@
 {
   "name": "@photo-details/docs",
   "version": "0.1.0",
+  "description": "Documentation and interactive demo for React Photo Details Lightbox.",
   "private": true,
+  "license": "MIT",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

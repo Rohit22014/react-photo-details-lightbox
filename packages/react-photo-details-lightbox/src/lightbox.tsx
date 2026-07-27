@@ -2,10 +2,7 @@
 
 import Lightbox from "yet-another-react-lightbox";
 import { PhotoDetails } from "./plugin";
-import type {
-  PhotoDetailsLightboxProps,
-  PhotoDetailsSettings,
-} from "./types";
+import type { PhotoDetailsLightboxProps, PhotoDetailsSettings } from "./types";
 
 export function PhotoDetailsLightbox({
   detailLevel,
@@ -24,9 +21,7 @@ export function PhotoDetailsLightbox({
     ...(detailLevel !== undefined ? { detailLevel } : {}),
     ...(defaultDetailLevel !== undefined ? { defaultDetailLevel } : {}),
     ...(onDetailLevelChange !== undefined ? { onDetailLevelChange } : {}),
-    ...(allowDetailLevelChange !== undefined
-      ? { allowDetailLevelChange }
-      : {}),
+    ...(allowDetailLevelChange !== undefined ? { allowDetailLevelChange } : {}),
     ...(customSections !== undefined ? { customSections } : {}),
     ...(renderDetails !== undefined ? { renderDetails } : {}),
     ...(formatters !== undefined ? { formatters } : {}),

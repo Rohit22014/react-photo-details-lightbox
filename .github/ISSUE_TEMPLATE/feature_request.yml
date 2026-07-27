@@ -1,0 +1,44 @@
+name: Feature request
+description: Suggest an improvement to the component, metadata model, or demo.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Photographic use case
+      description: What workflow or viewer need would this improve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the API or interface you would like to use.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Explain any workarounds or existing options you considered.
+
+  - type: checkboxes
+    id: compatibility
+    attributes:
+      label: Compatibility considerations
+      options:
+        - label: I considered keyboard and screen-reader behavior.
+        - label: I considered desktop and mobile layouts.
+        - label: I considered React 18/19 and Next.js compatibility.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and documentation first.
+          required: true

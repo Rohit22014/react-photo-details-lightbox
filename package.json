@@ -1,8 +1,18 @@
 {
   "name": "react-photo-details-lightbox-workspace",
   "version": "0.1.0",
+  "description": "A photography-first metadata inspector for Yet Another React Lightbox.",
   "private": true,
   "license": "MIT",
+  "packageManager": "npm@11.12.1",
+  "homepage": "https://photo-details-lightbox.rohitdinanath.chatgpt.site",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Rohit22014/react-photo-details-lightbox.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Rohit22014/react-photo-details-lightbox/issues"
+  },
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -14,13 +24,28 @@
     "build:cloudflare": "npm run build:package && npm run build:cloudflare --workspace @photo-details/docs",
     "build:sites": "npm run build:package && npm run build:sites --workspace @photo-details/docs && node scripts/package-sites.mjs",
     "package:sites": "node scripts/package-sites.mjs",
+    "check:compatibility": "node scripts/check-peer-compatibility.mjs",
+    "check:package": "npm run check:package --workspace react-photo-details-lightbox",
     "dev": "npm run dev --workspace @photo-details/docs",
-    "lint": "npm run lint --workspaces --if-present",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint . --max-warnings=0",
+    "lint:fix": "eslint . --fix",
     "test": "npm run test --workspace react-photo-details-lightbox",
     "test:e2e": "npm run test:e2e --workspace @photo-details/docs",
-    "typecheck": "npm run typecheck --workspaces --if-present"
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "validate": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run build && npm run check:package"
   },
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=22.9.0"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.5",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "16.2.12",
+    "eslint-config-prettier": "^10.1.8",
+    "jsonc-parser": "^3.3.1",
+    "prettier": "^3.9.6",
+    "publint": "^0.3.22"
   }
 }

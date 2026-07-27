@@ -1,17 +1,11 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
-import {
-  cp,
-  mkdir,
-  mkdtemp,
-  readFile,
-  rm,
-  stat,
-} from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { parse, printParseErrorCode } from "jsonc-parser";
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = path.resolve(scriptDirectory, "..");
@@ -21,8 +15,7 @@ const assetsDirectory = path.join(docsDirectory, ".open-next", "assets");
 const wranglerConfig = path.join(docsDirectory, "wrangler.jsonc");
 const hostingConfig = path.join(workspaceRoot, ".openai", "hosting.json");
 const outputPath = path.resolve(
-  process.argv[2] ??
-    path.join(tmpdir(), "photo-details-lightbox-sites.tar.gz"),
+  process.argv[2] ?? path.join(tmpdir(), "photo-details-lightbox-sites.tar.gz"),
 );
 
 await Promise.all([
@@ -44,9 +37,7 @@ if (Buffer.byteLength(workerSource) < 500_000) {
   );
 }
 
-if (
-  /\brequire\((["'])(?:fs|path|async_hooks|module)\1\)/.test(workerSource)
-) {
+if (/\brequire\((["'])(?:fs|path|async_hooks|module)\1\)/.test(workerSource)) {
   throw new Error(
     "The final Worker still contains a raw CommonJS Node.js require.",
   );
@@ -63,7 +54,21 @@ if (
   );
 }
 
-const wrangler = JSON.parse(wranglerSource);
+const wranglerParseErrors = [];
+const wrangler = parse(wranglerSource, wranglerParseErrors, {
+  allowTrailingComma: true,
+});
+
+if (wranglerParseErrors.length > 0) {
+  const details = wranglerParseErrors
+    .map(
+      ({ error, offset }) =>
+        `${printParseErrorCode(error)} at character ${offset}`,
+    )
+    .join(", ");
+  throw new Error(`wrangler.jsonc could not be parsed: ${details}.`);
+}
+
 if (
   wrangler.main !== ".open-next/worker.js" ||
   wrangler.assets?.directory !== ".open-next/assets" ||

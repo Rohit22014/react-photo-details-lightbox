@@ -54,10 +54,7 @@ test("open lightbox has no serious or critical accessibility violations", async 
     ({ impact }) => impact === "serious" || impact === "critical",
   );
 
-  expect(
-    violations,
-    JSON.stringify(violations, null, 2),
-  ).toEqual([]);
+  expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
 });
 
 test("switches between minimum, information, detailed, and custom modes", async ({

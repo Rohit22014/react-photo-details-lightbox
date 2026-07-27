@@ -5,9 +5,11 @@
   --acid: #d6ff43;
   --muted: #77776f;
   --line: rgba(23, 23, 20, 0.18);
-  --display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino,
+  --display:
+    "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino,
     "Times New Roman", serif;
-  --sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI",
+  --sans:
+    Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
 }
 
@@ -151,7 +153,11 @@ img {
   align-items: center;
   color: #fff;
   background:
-    radial-gradient(circle at 18% 12%, rgba(255, 255, 255, 0.08), transparent 30%),
+    radial-gradient(
+      circle at 18% 12%,
+      rgba(255, 255, 255, 0.08),
+      transparent 30%
+    ),
     #151513;
 }
 
@@ -793,7 +799,13 @@ img {
   padding: 44px;
   overflow-x: auto;
   color: #cac9c2;
-  font: 13px/1.9 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font:
+    13px/1.9 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    monospace;
   tab-size: 2;
 }
 
@@ -811,7 +823,13 @@ img {
   color: var(--acid);
   background: rgba(214, 255, 67, 0.055);
   border-top: 1px solid rgba(214, 255, 67, 0.2);
-  font: 11px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font:
+    11px ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    monospace;
 }
 
 .install-row code {
@@ -828,7 +846,11 @@ img {
   text-align: center;
   color: #fff;
   background:
-    radial-gradient(circle at 50% 120%, rgba(214, 255, 67, 0.13), transparent 45%),
+    radial-gradient(
+      circle at 50% 120%,
+      rgba(214, 255, 67, 0.13),
+      transparent 45%
+    ),
     #171714;
 }
 
@@ -877,8 +899,69 @@ footer p {
   text-align: center;
 }
 
-footer p:last-child {
+.footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 22px;
+}
+
+.footer-links a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 180ms ease;
+}
+
+.footer-links a:hover {
+  color: #fff;
+}
+
+footer > p:last-child {
   text-align: right;
+}
+
+.policy-page {
+  min-height: 100vh;
+  padding: 72px max(22px, 8vw);
+  color: var(--ink);
+  background: var(--paper);
+}
+
+.policy-page article {
+  max-width: 760px;
+  margin: 80px auto 0;
+}
+
+.policy-back {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.policy-page h1 {
+  margin: 22px 0 48px;
+  font-family: var(--display);
+  font-size: clamp(54px, 8vw, 104px);
+  font-weight: 400;
+  line-height: 0.9;
+  letter-spacing: -0.055em;
+}
+
+.policy-page h2 {
+  margin: 46px 0 14px;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.policy-page p {
+  color: #55554f;
+  font-size: 17px;
+  line-height: 1.75;
+}
+
+.policy-page code {
+  font-size: 0.9em;
 }
 
 @media (max-width: 1024px) {
@@ -1169,9 +1252,10 @@ footer p:last-child {
     justify-content: space-between;
   }
 
-  footer p:nth-child(2) {
+  .footer-links {
     order: 3;
     width: 100%;
+    justify-content: flex-start;
     text-align: left;
   }
 }

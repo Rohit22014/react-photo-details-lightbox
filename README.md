@@ -2,6 +2,13 @@
 
 A photography-first metadata inspector for [Yet Another React Lightbox](https://yet-another-react-lightbox.com/). It keeps the photograph central while making captions, stories, capture details, equipment, exposure, location, file information, and rights easy to explore.
 
+[![CI](https://github.com/Rohit22014/react-photo-details-lightbox/actions/workflows/ci.yml/badge.svg)](https://github.com/Rohit22014/react-photo-details-lightbox/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+
+[Live demo](https://photo-details-lightbox.rohitdinanath.chatgpt.site) ·
+[Package documentation](./packages/react-photo-details-lightbox/README.md) ·
+[Contributing](./CONTRIBUTING.md)
+
 > This repository is under active development. The package name used below is the intended npm name; do not assume it has been published yet.
 
 ## Highlights
@@ -17,7 +24,7 @@ A photography-first metadata inspector for [Yet Another React Lightbox](https://
 
 ## Run this workspace
 
-Requirements: Node.js 22 or newer and npm.
+Requirements: Node.js 22.9 or newer and the npm version declared in `package.json`.
 
 ```bash
 npm install
@@ -124,12 +131,12 @@ Metadata is optional. Missing values and empty sections are omitted instead of b
 
 ## Detail levels
 
-| Level | Display |
-| --- | --- |
-| `minimum` | Photograph and standard lightbox controls only |
-| `information` | Essential title, caption, capture date, and location |
-| `detailed` | Story, equipment, exposure, location, file, creator, and rights groups |
-| `custom` | Only the sections and fields supplied through `customSections` |
+| Level         | Display                                                                |
+| ------------- | ---------------------------------------------------------------------- |
+| `minimum`     | Photograph and standard lightbox controls only                         |
+| `information` | Essential title, caption, capture date, and location                   |
+| `detailed`    | Story, equipment, exposure, location, file, creator, and rights groups |
+| `custom`      | Only the sections and fields supplied through `customSections`         |
 
 The viewer can switch levels by default. Set `allowDetailLevelChange={false}` to lock the selected level.
 
@@ -290,14 +297,13 @@ A normal import from a Client Component is the preferred starting point. If an a
 import dynamic from "next/dynamic";
 import type { PhotoDetailsLightboxProps } from "react-photo-details-lightbox";
 
-const ClientOnlyPhotoDetailsLightbox =
-  dynamic<PhotoDetailsLightboxProps>(
-    () =>
-      import("react-photo-details-lightbox").then(
-        (module) => module.PhotoDetailsLightbox,
-      ),
-    { ssr: false },
-  );
+const ClientOnlyPhotoDetailsLightbox = dynamic<PhotoDetailsLightboxProps>(
+  () =>
+    import("react-photo-details-lightbox").then(
+      (module) => module.PhotoDetailsLightbox,
+    ),
+  { ssr: false },
+);
 
 export function ClientOnlyLightbox(props: PhotoDetailsLightboxProps) {
   return <ClientOnlyPhotoDetailsLightbox {...props} />;
@@ -332,7 +338,16 @@ if (file && isExifSourceSupported(file)) {
 }
 ```
 
-Accepted sources are explicit `File`, `Blob`, `ArrayBuffer`, and accessible URL inputs. URL extraction is subject to the remote server's CORS policy. Treat embedded coordinates and creator details as potentially sensitive, and obtain consent before uploading or displaying them.
+Accepted sources are explicit `File`, `Blob`, `ArrayBuffer`, and accessible URL
+inputs. URL extraction is subject to the remote server's CORS policy. Treat
+embedded coordinates, creator contact details, and camera or lens serial
+numbers as potentially sensitive, and obtain consent before uploading or
+displaying them.
+
+Prefer browser-provided `File` or `Blob` values. If extraction runs on a
+server, never pass an untrusted path or URL directly to the parser. Validate
+the protocol and destination against an allowlist, block private-network
+targets, and enforce download size and timeout limits.
 
 Extraction returns `PhotoMetadata`; it does not mutate a slide. Merge it explicitly so your own metadata remains authoritative. Consumers that use this entry point must install its optional parser dependency if their package manager does not install optional dependencies:
 
@@ -360,8 +375,29 @@ import type {
 } from "react-photo-details-lightbox";
 ```
 
-See the package README and the interactive documentation app for the complete metadata model and customization examples.
+See the [package README](./packages/react-photo-details-lightbox/README.md) and
+the [interactive demo](https://photo-details-lightbox.rohitdinanath.chatgpt.site)
+for the complete metadata model and customization examples.
+
+## Project policies
+
+- Read [Contributing](./CONTRIBUTING.md) before opening a pull request.
+- Report vulnerabilities privately as described in the
+  [Security Policy](./SECURITY.md).
+- Review the [Demo Privacy Notice](./PRIVACY.md) and
+  [Photo Credits](./PHOTO_CREDITS.md).
+- See the [Changelog](./CHANGELOG.md) for release notes.
+
+This project builds on Yet Another React Lightbox but is independently
+maintained and is not affiliated with or endorsed by its original author.
+
+## AI assistance
+
+This project was generated and developed with the assistance of AI tools.
+The maintainers have reviewed and adapted the resulting work and remain
+responsible for its use, maintenance, and distribution.
 
 ## License
 
-[MIT](./LICENSE)
+[MIT](./LICENSE). Yet Another React Lightbox remains licensed by its original
+author under the MIT License; see [Third-Party Notices](./THIRD_PARTY_NOTICES.md).

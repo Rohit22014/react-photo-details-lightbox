@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import {
   PhotoDetailsLightbox,
@@ -8,12 +9,7 @@ import {
 } from "react-photo-details-lightbox";
 import { photos } from "@/data/photos";
 
-const levels: DetailLevel[] = [
-  "minimum",
-  "information",
-  "detailed",
-  "custom",
-];
+const levels: DetailLevel[] = ["minimum", "information", "detailed", "custom"];
 
 const customSections: DetailSection[] = [
   {
@@ -40,9 +36,7 @@ const displayTitle = (level: DetailLevel) =>
   level.charAt(0).toUpperCase() + level.slice(1);
 
 const getThumbnailSrc = (src: string) =>
-  src
-    .replace(/w=(?:2400|2000|1600)/, "w=1200")
-    .replace("h=2400", "h=1800");
+  src.replace(/w=(?:2400|2000|1600)/, "w=1200").replace("h=2400", "h=1800");
 
 export function PhotoGallery() {
   const [open, setOpen] = useState(false);
@@ -51,7 +45,8 @@ export function PhotoGallery() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    setHydrated(true);
+    const frame = requestAnimationFrame(() => setHydrated(true));
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   const openPhoto = (photoIndex: number) => {
@@ -71,7 +66,9 @@ export function PhotoGallery() {
           <select
             data-testid="demo-detail-level-select"
             value={detailLevel}
-            onChange={(event) => setDetailLevel(event.target.value as DetailLevel)}
+            onChange={(event) =>
+              setDetailLevel(event.target.value as DetailLevel)
+            }
           >
             {levels.map((level) => (
               <option key={level} value={level}>
@@ -101,12 +98,13 @@ export function PhotoGallery() {
             onClick={() => openPhoto(photoIndex)}
             aria-label={`Open ${photo.photoMetadata.title} in the lightbox`}
           >
-            <img
+            <Image
               src={getThumbnailSrc(photo.src)}
               alt={photo.alt}
               width={photo.width}
               height={photo.height}
               loading={photoIndex > 1 ? "lazy" : "eager"}
+              sizes="(max-width: 760px) 100vw, 50vw"
             />
             <span className="photo-card-shade" />
             <span className="photo-card-index">
@@ -123,11 +121,21 @@ export function PhotoGallery() {
         ))}
       </div>
       <p className="demo-credit">
-        Photographs via{" "}
-        <a href="https://unsplash.com" target="_blank" rel="noreferrer">
-          Unsplash
+        Demo photographs:{" "}
+        {photos.map((photo, photoIndex) => (
+          <span key={photo.attribution.url}>
+            {photoIndex > 0 ? ", " : ""}
+            <a href={photo.attribution.url} target="_blank" rel="noreferrer">
+              {photo.attribution.photographer}
+            </a>
+          </span>
+        ))}
+        {" · "}
+        <a href="https://unsplash.com/license" target="_blank" rel="noreferrer">
+          Unsplash License
         </a>
-        . Titles, stories and capture metadata are illustrative.
+        . Titles, stories, dates, equipment, filenames, and most locations are
+        fictional demo metadata.
       </p>
 
       <PhotoDetailsLightbox

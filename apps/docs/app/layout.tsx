@@ -4,7 +4,12 @@ import "yet-another-react-lightbox/styles.css";
 import "react-photo-details-lightbox/styles.css";
 import "./globals.css";
 
+const siteUrl = new URL(
+  "https://photo-details-lightbox.rohitdinanath.chatgpt.site",
+);
+
 export const metadata: Metadata = {
+  metadataBase: siteUrl,
   title: {
     default: "Photo Details — A lightbox for the whole photograph",
     template: "%s · Photo Details",
@@ -23,6 +28,15 @@ export const metadata: Metadata = {
     description:
       "A better lightbox for photographers — image, story and capture details in one considered frame.",
     type: "website",
+    url: "/",
+    siteName: "Photo Details",
+  },
+  alternates: {
+    canonical: "/",
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 
@@ -31,7 +45,9 @@ export const viewport: Viewport = {
   themeColor: "#11110f",
 };
 
-export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+export default function RootLayout({
+  children,
+}: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="en">
       <body>{children}</body>

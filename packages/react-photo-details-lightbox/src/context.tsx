@@ -23,6 +23,8 @@ const levelNames: Record<DetailLevel, string> = {
   custom: "Custom",
 };
 
+const defaultSettings: PhotoDetailsSettings = {};
+
 interface PhotoDetailsContextValue {
   level: DetailLevel;
   setLevel: (level: DetailLevel) => void;
@@ -39,7 +41,7 @@ const PhotoDetailsContext = createContext<PhotoDetailsContextValue | null>(
 
 export function PhotoDetailsProvider({ children }: PropsWithChildren) {
   const { photoDetails } = useLightboxProps();
-  const settings = photoDetails ?? {};
+  const settings = photoDetails ?? defaultSettings;
   const [internalLevel, setInternalLevel] = useState<DetailLevel>(
     settings.defaultDetailLevel ?? "information",
   );
@@ -93,14 +95,7 @@ export function PhotoDetailsProvider({ children }: PropsWithChildren) {
       labels,
       theme: settings.theme ?? "dark",
     }),
-    [
-      availableLevels,
-      labels,
-      level,
-      setLevel,
-      settings,
-      toggleDetails,
-    ],
+    [availableLevels, labels, level, setLevel, settings, toggleDetails],
   );
 
   return (

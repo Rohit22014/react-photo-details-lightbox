@@ -2,10 +2,14 @@ import type { PhotoMetadata } from "./types";
 
 export type ExifSource = string | ArrayBuffer | Blob;
 
+export interface ExifExtractionErrorOptions {
+  cause?: unknown;
+}
+
 export class ExifExtractionError extends Error {
   override name = "ExifExtractionError";
 
-  constructor(message: string, options?: ErrorOptions) {
+  constructor(message: string, options?: ExifExtractionErrorOptions) {
     super(message, options);
   }
 }
@@ -82,8 +86,7 @@ export async function extractPhotoMetadata(
     }) as PhotoMetadata["lens"];
     const exposure = definedObject({
       aperture: numeric(data.FNumber) ?? text(data.ApertureValue),
-      shutterSpeed:
-        numeric(data.ExposureTime) ?? text(data.ShutterSpeedValue),
+      shutterSpeed: numeric(data.ExposureTime) ?? text(data.ShutterSpeedValue),
       iso: numeric(data.ISO),
       focalLength: numeric(data.FocalLength),
       focalLength35mm: numeric(data.FocalLengthIn35mmFormat),
@@ -133,9 +136,7 @@ export async function extractPhotoMetadata(
       ...(location ? { location } : {}),
       ...(file ? { file } : {}),
       ...(creator ? { creator } : {}),
-      ...(text(data.Copyright)
-        ? { copyright: text(data.Copyright)! }
-        : {}),
+      ...(text(data.Copyright) ? { copyright: text(data.Copyright)! } : {}),
       ...(Array.isArray(data.Keywords)
         ? {
             keywords: data.Keywords.filter(

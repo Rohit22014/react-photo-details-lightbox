@@ -54,7 +54,9 @@ describe("PhotoDetailsLightbox", () => {
     fireEvent.change(selector, { target: { value: "minimum" } });
 
     await waitFor(() =>
-      expect(screen.queryByTestId("metadata-inspector")).not.toBeInTheDocument(),
+      expect(
+        screen.queryByTestId("metadata-inspector"),
+      ).not.toBeInTheDocument(),
     );
 
     fireEvent.click(screen.getByTestId("photo-details-toggle"));

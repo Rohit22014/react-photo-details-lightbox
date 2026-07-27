@@ -22,10 +22,7 @@ const PhotoDetailsProviderModule = createModule(
   "PhotoDetailsProvider",
   ProviderModule,
 );
-const PhotoDetailsPanelModule = createModule(
-  "PhotoDetailsPanel",
-  PanelModule,
-);
+const PhotoDetailsPanelModule = createModule("PhotoDetailsPanel", PanelModule);
 
 export const PhotoDetails: Plugin = ({ addChild, addParent, augment }) => {
   addParent(MODULE_CONTROLLER, PhotoDetailsProviderModule);
@@ -40,10 +37,6 @@ export const PhotoDetails: Plugin = ({ addChild, addParent, augment }) => {
       theme: "dark",
       ...photoDetails,
     },
-    toolbar: addToolbarButton(
-      toolbar,
-      "photo-details",
-      <PhotoDetailsButton />,
-    ),
+    toolbar: addToolbarButton(toolbar, "photo-details", <PhotoDetailsButton />),
   }));
 };
