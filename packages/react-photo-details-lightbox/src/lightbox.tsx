@@ -14,6 +14,7 @@ export function PhotoDetailsLightbox({
   formatters,
   theme,
   labels,
+  histogram,
   plugins,
   ...lightboxProps
 }: PhotoDetailsLightboxProps) {
@@ -27,6 +28,7 @@ export function PhotoDetailsLightbox({
     ...(formatters !== undefined ? { formatters } : {}),
     ...(theme !== undefined ? { theme } : {}),
     ...(labels !== undefined ? { labels } : {}),
+    ...(histogram !== undefined ? { histogram } : {}),
   };
 
   return (

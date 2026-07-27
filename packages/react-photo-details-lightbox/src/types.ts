@@ -92,6 +92,36 @@ export interface PhotoMetadata {
   [key: string]: unknown;
 }
 
+export interface RgbHistogramData {
+  red: readonly number[];
+  green: readonly number[];
+  blue: readonly number[];
+}
+
+export interface PhotoHistogramOptions {
+  /**
+   * Analyze the active browser image when no valid precomputed histogram is
+   * available.
+   *
+   * @default true
+   */
+  autoGenerate?: boolean;
+  /**
+   * Longest edge, in pixels, used for browser-side sampling.
+   *
+   * @default 512
+   */
+  maxDimension?: number;
+  /**
+   * Detail levels in which the histogram is visible.
+   *
+   * @default ["detailed"]
+   */
+  levels?: readonly Exclude<DetailLevel, "minimum">[];
+}
+
+export type PhotoHistogramStatus = "loading" | "ready" | "unavailable";
+
 export interface DetailFieldContext {
   metadata: PhotoMetadata;
   slide: Slide;
@@ -160,10 +190,20 @@ export interface PhotoDetailsToolbarButtonRenderProps {
   onClick: () => void;
 }
 
+export interface PhotoDetailsHistogramRenderProps {
+  status: PhotoHistogramStatus;
+  data?: RgbHistogramData;
+  slide: SlideImage;
+  canRetry: boolean;
+  retry: () => void;
+  children: ReactNode;
+}
+
 export interface PhotoDetailsRenderSlots {
   panel?: (props: PhotoDetailsPanelRenderProps) => ReactNode;
   section?: (props: PhotoDetailsSectionRenderProps) => ReactNode;
   field?: (props: PhotoDetailsFieldRenderProps) => ReactNode;
+  histogram?: (props: PhotoDetailsHistogramRenderProps) => ReactNode;
   toolbarButton?: (props: PhotoDetailsToolbarButtonRenderProps) => ReactNode;
   empty?: (props: { level: DetailLevel; slide?: Slide }) => ReactNode;
 }
@@ -178,6 +218,7 @@ export interface PhotoDetailsSettings {
   formatters?: Partial<PhotoDetailsFormatters>;
   theme?: PhotoDetailsTheme;
   labels?: Partial<Record<DetailLevel, string>>;
+  histogram?: boolean | PhotoHistogramOptions;
 }
 
 export interface PhotoDetailsPluginProps {
@@ -186,6 +227,8 @@ export interface PhotoDetailsPluginProps {
 
 export type PhotoSlide = SlideImage & {
   photoMetadata?: PhotoMetadata;
+  photoHistogram?: RgbHistogramData;
+  photoHistogramSrc?: string;
 };
 
 export type PhotoDetailsLightboxProps = Omit<LightboxExternalProps, "plugins"> &
@@ -196,6 +239,8 @@ export type PhotoDetailsLightboxProps = Omit<LightboxExternalProps, "plugins"> &
 declare module "yet-another-react-lightbox" {
   interface SlideImage {
     photoMetadata?: PhotoMetadata;
+    photoHistogram?: RgbHistogramData;
+    photoHistogramSrc?: string;
   }
 
   interface LightboxProps {

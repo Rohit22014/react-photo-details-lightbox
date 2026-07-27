@@ -14,6 +14,8 @@ and this project follows [Semantic Versioning](https://semver.org/).
 - Responsive desktop inspector and mobile details sheet.
 - Next.js App Router documentation and interactive demo.
 - Optional, lazy EXIF extraction helpers.
+- Opt-in RGB histograms with precomputed data, browser-side analysis, channel
+  isolation, and accessible tonal summaries.
 - TypeScript, unit, browser, and accessibility checks.
 
 [Unreleased]: https://github.com/Rohit22014/react-photo-details-lightbox/commits/main

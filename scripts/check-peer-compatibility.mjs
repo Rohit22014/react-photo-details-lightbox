@@ -103,6 +103,7 @@ try {
         devDependencies: {
           "@types/react": reactTypesVersion,
           "@types/react-dom": reactDomTypesVersion,
+          jsdom: "^26.1.0",
           typescript: "^5.9.0",
         },
       },
@@ -188,6 +189,118 @@ if (!exif.isExifSourceSupported(new ArrayBuffer(0))) {
 `,
   );
 
+  await writeFile(
+    path.join(stagingDirectory, "browser-smoke.mjs"),
+    `import { JSDOM } from "jsdom";
+import React from "react";
+import { createRoot } from "react-dom/client";
+import { act as domAct } from "react-dom/test-utils";
+
+const dom = new JSDOM("<!doctype html><html><body><div id=\\"root\\"></div></body></html>", {
+  url: "http://localhost/",
+});
+
+Object.defineProperties(globalThis, {
+  document: { configurable: true, value: dom.window.document },
+  Element: { configurable: true, value: dom.window.Element },
+  Event: { configurable: true, value: dom.window.Event },
+  getComputedStyle: {
+    configurable: true,
+    value: dom.window.getComputedStyle.bind(dom.window),
+  },
+  HTMLElement: { configurable: true, value: dom.window.HTMLElement },
+  MouseEvent: { configurable: true, value: dom.window.MouseEvent },
+  MutationObserver: {
+    configurable: true,
+    value: dom.window.MutationObserver,
+  },
+  navigator: { configurable: true, value: dom.window.navigator },
+  Node: { configurable: true, value: dom.window.Node },
+  window: { configurable: true, value: dom.window },
+});
+
+class ResizeObserverMock {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+globalThis.ResizeObserver = ResizeObserverMock;
+globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+dom.window.matchMedia = () => ({
+  addEventListener() {},
+  addListener() {},
+  matches: false,
+  media: "",
+  onchange: null,
+  removeEventListener() {},
+  removeListener() {},
+});
+
+const act = React.act ?? domAct;
+const { PhotoDetailsLightbox } = await import("${packageManifest.name}");
+const container = document.getElementById("root");
+const root = createRoot(container);
+
+await act(async () => {
+  root.render(
+    React.createElement(PhotoDetailsLightbox, {
+      close() {},
+      defaultDetailLevel: "detailed",
+      open: true,
+      slides: [
+        {
+          alt: "Compatibility test photograph",
+          height: 800,
+          photoMetadata: { title: "Compatibility test" },
+          src: "/compatibility.jpg",
+          width: 1200,
+        },
+      ],
+    }),
+  );
+});
+
+const collapseButton = document.querySelector(
+  '[aria-label="Collapse photo details"]',
+);
+const detailsBody = document.querySelector(".rpdl__body");
+if (!collapseButton || !detailsBody) {
+  throw new Error("The photo details panel did not mount in the DOM.");
+}
+
+await act(async () => {
+  collapseButton.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+});
+if (
+  detailsBody.inert !== true ||
+  !detailsBody.hasAttribute("inert") ||
+  detailsBody.getAttribute("aria-hidden") !== "true" ||
+  detailsBody.getAttribute("tabindex") !== "-1"
+) {
+  throw new Error("Collapsed photo details are not inert in this React version.");
+}
+
+const expandButton = document.querySelector(
+  '[aria-label="Expand photo details"]',
+);
+await act(async () => {
+  expandButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+});
+if (
+  detailsBody.inert !== false ||
+  detailsBody.hasAttribute("inert") ||
+  detailsBody.hasAttribute("aria-hidden") ||
+  detailsBody.getAttribute("tabindex") !== "0"
+) {
+  throw new Error("Expanded photo details did not restore interaction.");
+}
+
+await act(async () => root.unmount());
+dom.window.close();
+`,
+  );
+
   run(
     "npm",
     ["install", "--ignore-scripts", "--no-audit", "--no-fund"],
@@ -226,6 +339,7 @@ if (!exif.isExifSourceSupported(new ArrayBuffer(0))) {
 
   run("node", ["smoke.mjs"], stagingDirectory);
   run("node", ["smoke.cjs"], stagingDirectory);
+  run("node", ["browser-smoke.mjs"], stagingDirectory);
   run(
     "node",
     ["node_modules/typescript/bin/tsc", "--project", "tsconfig.json"],

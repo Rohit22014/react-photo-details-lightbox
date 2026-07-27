@@ -19,6 +19,7 @@ A photography-first metadata inspector for [Yet Another React Lightbox](https://
 - A convenient `PhotoDetailsLightbox` wrapper and a composable `PhotoDetails` YARL plugin
 - Typed metadata and custom section schemas
 - Optional, lazy EXIF extraction from user-provided sources
+- Opt-in RGB histograms from precomputed data or browser-side image analysis
 - React 18.2–19 and Next.js App Router support
 - Keyboard, focus, reduced-motion, and screen-reader friendly interactions
 
@@ -80,6 +81,7 @@ import { PhotoDetailsLightbox } from "react-photo-details-lightbox";
 const slides = [
   {
     src: "/photos/atlantic-dawn.jpg",
+    photoHistogramSrc: "/photos/atlantic-dawn-histogram.jpg",
     width: 2400,
     height: 1600,
     alt: "Warm dawn light over the Atlantic coast",
@@ -120,6 +122,7 @@ export function GalleryLightbox() {
         close={() => setOpen(false)}
         slides={slides}
         defaultDetailLevel="detailed"
+        histogram
         theme="system"
       />
     </>
@@ -234,6 +237,76 @@ const customSections: DetailSection[] = [
 
 `DetailField` also supports `getValue`, `format`, and `hidden` for computed values, presentation overrides, and conditional visibility. `DetailSection` supports `hidden`. Use the `renderDetails` slots when an application needs to replace the panel, section, field, toolbar control, or empty presentation.
 
+## Optional RGB histogram
+
+Set `histogram` to opt in. By default, it appears only in `detailed` mode and
+analyzes the active image in the browser at a maximum 512-pixel edge. The
+default graph overlays RGB and lets viewers isolate the red, green, or blue
+channel while retaining a screen-reader tonal summary:
+
+```tsx
+<PhotoDetailsLightbox open={open} close={close} slides={slides} histogram />
+```
+
+Use the options form to change the sampling size or the detail levels where it
+appears:
+
+```tsx
+<PhotoDetailsLightbox
+  open={open}
+  close={close}
+  slides={slides}
+  histogram={{
+    autoGenerate: true,
+    maxDimension: 512,
+    levels: ["information", "detailed"],
+  }}
+/>
+```
+
+Automatic analysis uses `photoHistogramSrc` when supplied, then a suitable
+`srcSet` candidate, then `src`. Prefer a small derivative that has the same
+crop and color treatment as the displayed photograph:
+
+```ts
+const slide = {
+  src: "/photos/full-size.jpg",
+  photoHistogramSrc: "/photos/histogram-512.jpg",
+};
+```
+
+Remote images must allow cross-origin browser access. A photograph can still
+display when its host blocks CORS, but its pixels cannot be read for a
+histogram. The inspector reports the histogram as unavailable without hiding
+the image or metadata. A Content Security Policy must also allow the analysis
+origin through `connect-src`; allowing it only through `img-src` is not enough
+for the separate fetch.
+
+For deterministic rendering and no client-side fetch, supply precomputed bins.
+Each channel must contain exactly 256 finite, non-negative numbers:
+
+```ts
+import type { RgbHistogramData } from "react-photo-details-lightbox";
+
+const histogram: RgbHistogramData = {
+  red: redBins,
+  green: greenBins,
+  blue: blueBins,
+};
+
+const slide = {
+  src: "/photos/full-size.jpg",
+  photoHistogram: histogram,
+};
+```
+
+Valid `photoHistogram` data takes precedence over image analysis. Set
+`autoGenerate: false` to accept only precomputed data. The graph is an 8-bit,
+display-referred RGB summary for the browser-renderable derivative; it is not a
+RAW sensor, linear-light, wide-gamut, or HDR analysis tool. HEIF/HEIC and camera
+RAW files are not converted by the lightbox. Generate an AVIF, WebP, or JPEG
+derivative during ingestion, or compute and supply the bins on the server.
+
 ## Next.js App Router
 
 The lightbox is interactive, so the component that owns its state must be a Client Component. It can still be rendered from a Server Component.
@@ -278,6 +351,7 @@ export function PhotoLightbox({ slides }: { slides: PhotoSlide[] }) {
         close={() => setOpen(false)}
         slides={slides}
         defaultDetailLevel="information"
+        histogram
       />
     </>
   );
@@ -285,6 +359,11 @@ export function PhotoLightbox({ slides }: { slides: PhotoSlide[] }) {
 ```
 
 Replace `PhotoSlide` with your application's serializable slide type. When slides cross a Server-to-Client boundary, pass strings, numbers, booleans, arrays, and plain objects—not `File`, `Blob`, functions, or other non-serializable values.
+
+Histogram generation also runs in this Client Component. Same-origin files
+under `public/` work without extra CORS configuration. If a Server Component
+precomputes `photoHistogram`, pass its three plain 256-number arrays across the
+boundary.
 
 ### Optional client-only dynamic import
 
@@ -314,7 +393,9 @@ Next.js does not allow `ssr: false` in a Server Component. Keep this wrapper beh
 
 ## Optional EXIF extraction
 
-The core lightbox never downloads an image or extracts metadata on its own. This avoids surprise network requests, CORS failures, and main-thread work. The optional `exif` entry point lazily loads its parser only when extraction is requested:
+EXIF extraction never runs unless the application calls the optional helper,
+which lazily loads its parser. The separately opt-in RGB histogram can fetch
+the configured analysis source, but it does not extract or upload EXIF data:
 
 ```tsx
 import {
@@ -369,6 +450,8 @@ import type {
   PhotoDetailsLightboxProps,
   PhotoDetailsSettings,
   PhotoDetailsRenderSlots,
+  PhotoHistogramOptions,
+  RgbHistogramData,
   DetailLevel,
   DetailSection,
   DetailField,

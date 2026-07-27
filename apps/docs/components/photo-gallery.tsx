@@ -146,6 +146,7 @@ export function PhotoGallery() {
         detailLevel={detailLevel}
         allowDetailLevelChange
         customSections={customSections}
+        histogram
         onDetailLevelChange={setDetailLevel}
       />
     </>

@@ -2,6 +2,7 @@
 
 import {
   Fragment,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -16,9 +17,12 @@ import {
   useController,
   useLightboxState,
   type Label,
+  type SlideImage,
 } from "yet-another-react-lightbox";
 import { usePhotoDetails } from "./context";
+import { RgbHistogramView } from "./histogram-view";
 import { getPresetSections, resolveDetailSections } from "./presets";
+import { useRgbHistogram } from "./use-rgb-histogram";
 import type {
   PhotoDetailsFieldRenderProps,
   PhotoDetailsSectionRenderProps,
@@ -98,9 +102,23 @@ export function PhotoDetailsPanel() {
   const { availableLevels, labels, level, setLevel, settings, theme } =
     usePhotoDetails();
   const { metadata, slide } = useCurrentSlideMetadata();
+  const imageSlide: SlideImage | undefined =
+    slide && isImageSlide(slide) ? slide : undefined;
   const [sheetExpanded, setSheetExpanded] = useState(true);
   const dragStart = useRef<number | null>(null);
   const dragged = useRef(false);
+  const setBodyRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (!node) return;
+
+      // React 18 does not serialize the boolean `inert` JSX prop. Set both
+      // the DOM property and reflected attribute so supported browsers behave
+      // consistently across the full peer dependency range.
+      node.inert = !sheetExpanded;
+      node.toggleAttribute("inert", !sheetExpanded);
+    },
+    [sheetExpanded],
+  );
 
   const sections = useMemo(() => {
     if (!slide || !metadata || level === "minimum") return [];
@@ -114,6 +132,23 @@ export function PhotoDetailsPanel() {
       settings.formatters,
     );
   }, [level, metadata, settings.customSections, settings.formatters, slide]);
+  const histogramSettings =
+    settings.histogram === true ? {} : settings.histogram || undefined;
+  const histogramVisible = Boolean(
+    imageSlide &&
+    histogramSettings &&
+    (histogramSettings.levels ?? ["detailed"]).some(
+      (histogramLevel) => histogramLevel === level,
+    ),
+  );
+  const histogramState = useRgbHistogram({
+    ...(imageSlide ? { slide: imageSlide } : {}),
+    enabled: histogramVisible,
+    autoGenerate: histogramSettings?.autoGenerate ?? true,
+    ...(histogramSettings?.maxDimension !== undefined
+      ? { maxDimension: histogramSettings.maxDimension }
+      : {}),
+  });
 
   useEffect(() => {
     const controller = containerRef.current;
@@ -140,20 +175,48 @@ export function PhotoDetailsPanel() {
     dragStart.current = null;
   };
 
+  const defaultHistogram =
+    histogramVisible && imageSlide ? (
+      <RgbHistogramView
+        {...(histogramState.data ? { data: histogramState.data } : {})}
+        canRetry={histogramState.canRetry}
+        status={histogramState.status}
+        onRetry={histogramState.retry}
+      />
+    ) : null;
+  const histogram =
+    histogramVisible && imageSlide
+      ? settings.renderDetails?.histogram
+        ? settings.renderDetails.histogram({
+            status: histogramState.status,
+            ...(histogramState.data ? { data: histogramState.data } : {}),
+            slide: imageSlide,
+            canRetry: histogramState.canRetry,
+            retry: histogramState.retry,
+            children: defaultHistogram,
+          })
+        : defaultHistogram
+      : null;
+  const hasMetadataContent = Boolean(
+    metadata && (metadata.title || metadata.caption || sections.length),
+  );
   const body =
-    metadata && (metadata.title || metadata.caption || sections.length) ? (
+    hasMetadataContent || histogramVisible ? (
       <Fragment>
-        {metadata.title || metadata.caption ? (
+        {metadata && (metadata.title || metadata.caption) ? (
           <div className="rpdl__intro">
             {metadata.title ? <h2>{metadata.title}</h2> : null}
             {metadata.caption ? <p>{metadata.caption}</p> : null}
           </div>
         ) : null}
-        <div className="rpdl__sections">
-          {sections.map((section) => (
-            <Section key={section.id} section={section} />
-          ))}
-        </div>
+        {histogram}
+        {sections.length ? (
+          <div className="rpdl__sections">
+            {sections.map((section) => (
+              <Section key={section.id} section={section} />
+            ))}
+          </div>
+        ) : null}
       </Fragment>
     ) : settings.renderDetails?.empty ? (
       settings.renderDetails.empty({
@@ -218,10 +281,12 @@ export function PhotoDetailsPanel() {
       </header>
 
       <div
+        ref={setBodyRef}
+        {...(!sheetExpanded ? { "aria-hidden": true } : {})}
         aria-label="Photo metadata"
         className="rpdl__body"
         role="region"
-        tabIndex={0}
+        tabIndex={sheetExpanded ? 0 : -1}
       >
         {body}
       </div>

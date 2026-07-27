@@ -34,6 +34,7 @@ import { PhotoDetailsLightbox } from "react-photo-details-lightbox";
 const slides = [
   {
     src: "/photos/winter-ridge.jpg",
+    photoHistogramSrc: "/photos/winter-ridge-histogram.jpg",
     width: 2400,
     height: 1600,
     alt: "Snow blowing over a mountain ridge",
@@ -69,6 +70,7 @@ export function PortfolioLightbox() {
         close={() => setOpen(false)}
         slides={slides}
         defaultDetailLevel="detailed"
+        histogram
         theme="system"
       />
     </>
@@ -171,6 +173,81 @@ const customSections: DetailSection[] = [
 
 A `DetailField` may instead supply `getValue`, and may define `format` or `hidden`. A `DetailSection` may also define `hidden`. Use `renderDetails` to override the provided panel, section, field, toolbar control, or empty presentation while retaining the lightbox state and metadata model.
 
+## RGB histogram
+
+Histogram rendering is opt-in. Passing `histogram` enables browser-side
+analysis for the active slide and shows the graph in `detailed` mode. Its
+`All`, `R`, `G`, and `B` controls switch between the overlaid and isolated
+channels, with a tonal summary available to screen readers:
+
+```tsx
+<PhotoDetailsLightbox open={open} close={close} slides={slides} histogram />
+```
+
+The options form controls automatic analysis, its maximum sampling dimension,
+and the visible detail levels:
+
+```tsx
+<PhotoDetailsLightbox
+  open={open}
+  close={close}
+  slides={slides}
+  histogram={{
+    autoGenerate: true,
+    maxDimension: 512,
+    levels: ["detailed"],
+  }}
+/>
+```
+
+Set `photoHistogramSrc` on a slide to analyze a lightweight derivative instead
+of its display-sized source:
+
+```ts
+const slide = {
+  src: "/photos/winter-ridge.jpg",
+  photoHistogramSrc: "/photos/winter-ridge-histogram.jpg",
+};
+```
+
+Automatic analysis requires the selected URL to be readable by browser canvas
+APIs. Same-origin URLs work normally; remote servers must grant cross-origin
+access. CORS, network, or decode failures affect only the histogram and expose
+a retry action. The photograph and its metadata remain available. Sites with a
+Content Security Policy must also allow the analysis origin through
+`connect-src`; `img-src` alone does not permit the separate fetch.
+
+Applications can avoid fetching and decoding in the browser by providing
+precomputed bins. Each channel requires exactly 256 finite, non-negative
+numbers:
+
+```ts
+import type { RgbHistogramData } from "react-photo-details-lightbox";
+
+const photoHistogram: RgbHistogramData = {
+  red: redBins,
+  green: greenBins,
+  blue: blueBins,
+};
+
+const slide = {
+  src: "/photos/winter-ridge.jpg",
+  photoHistogram,
+};
+```
+
+Valid precomputed data takes precedence over image analysis. Use
+`histogram={{ autoGenerate: false }}` when every histogram must be supplied by
+the application. The `renderDetails.histogram` slot can replace the default
+presentation while retaining its status, data, slide, `canRetry`, and retry
+behavior.
+
+This is an 8-bit, display-referred RGB histogram of a browser-renderable image,
+not RAW sensor, linear-light, wide-gamut, or HDR analysis. The lightbox does not
+convert HEIF/HEIC or camera RAW sources. Convert once during ingestion to an
+AVIF, WebP, or JPEG derivative, or calculate the bins on the server and supply
+`photoHistogram`.
+
 ## Next.js App Router
 
 Import the global CSS from the root layout:
@@ -207,11 +284,16 @@ export function GalleryLightbox({ slides }: { slides: Slides }) {
         open={open}
         close={() => setOpen(false)}
         slides={slides}
+        histogram
       />
     </>
   );
 }
 ```
+
+Browser-generated histograms also run inside that Client Component.
+Same-origin derivatives under `public/` need no extra CORS setup. Precomputed
+histograms are plain arrays and can cross a Server-to-Client boundary.
 
 `PhotoDetailsLightbox` is safe to import normally from a Client Component. If a project specifically wants no server-rendered lightbox module, `ssr: false` must also be declared inside a Client Component:
 
@@ -239,7 +321,9 @@ Do not place `dynamic(..., { ssr: false })` in a Server Component. Data passed f
 
 ## Optional EXIF helpers
 
-Metadata extraction is intentionally opt-in. The lightbox does not fetch image URLs or inspect files:
+Metadata extraction is intentionally opt-in and runs only when the application
+calls the EXIF helper. The separately opt-in RGB histogram may fetch its
+configured analysis source, but it does not extract EXIF data:
 
 ```tsx
 import {
@@ -291,6 +375,8 @@ Main types:
 - `PhotoDetailsLightboxProps`
 - `PhotoDetailsSettings`
 - `PhotoDetailsRenderSlots`
+- `PhotoHistogramOptions`
+- `RgbHistogramData`
 - `DetailLevel`
 - `DetailSection`
 - `DetailField`

@@ -22,8 +22,7 @@ export default function PrivacyPage() {
 
         <p>
           This documentation demo does not intentionally set cookies, run
-          first-party analytics, collect form submissions, or automatically
-          inspect your photographs.
+          first-party analytics, or collect form submissions.
         </p>
 
         <h2>External photographs</h2>
@@ -32,6 +31,13 @@ export default function PrivacyPage() {
           them sends ordinary web-request information, including an IP address
           and browser headers, to Unsplash. The hosting provider may also
           process standard request logs for security and operations.
+        </p>
+
+        <p>
+          When the detailed viewer is open, the demo fetches a low-resolution
+          image derivative and computes its RGB histogram locally in your
+          browser. Histogram data is not uploaded, persisted, or used for
+          analytics by this demo.
         </p>
 
         <h2>EXIF metadata</h2>
