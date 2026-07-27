@@ -81,8 +81,12 @@ export function PhotoDetailsProvider({ children }: PropsWithChildren) {
   }, [level, setLevel]);
 
   const labels = useMemo(
-    () => ({ ...levelNames, ...settings.labels }),
-    [settings.labels],
+    () => ({
+      ...levelNames,
+      ...settings.labels,
+      ...settings.detailLabels,
+    }),
+    [settings.detailLabels, settings.labels],
   );
 
   const value = useMemo<PhotoDetailsContextValue>(

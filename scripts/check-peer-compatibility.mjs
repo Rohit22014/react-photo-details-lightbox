@@ -115,12 +115,37 @@ try {
   await writeFile(
     path.join(stagingDirectory, "consumer.tsx"),
     `import { ExifExtractionError } from "${packageManifest.name}/exif";
-import type { PhotoDetailsLightboxProps as RootProps } from "${packageManifest.name}";
+import type {
+  PhotoDetailsLightboxProps as RootProps,
+  PhotoDetailsZoomRef,
+} from "${packageManifest.name}";
 
+const zoomRef: { current: PhotoDetailsZoomRef | null } = { current: null };
 const props: RootProps = {
   close() {},
   open: false,
-  slides: [],
+  detailLabels: { detailed: "Technical" },
+  lightboxLabels: {
+    Close: "Dismiss",
+    "Zoom in": "Magnify",
+    "Zoom out": "Reduce",
+  },
+  slides: [
+    {
+      share: {
+        title: "Compatibility photograph",
+        url: "/work/compatibility-photograph",
+      },
+      src: "/compatibility.jpg",
+    },
+  ],
+  viewerActions: {
+    detailLevelMenu: true,
+    labels: { share: "Share this photograph" },
+    share: true,
+    zoom: true,
+  },
+  zoom: { maxZoomPixelRatio: 2, ref: zoomRef },
 };
 const error = new ExifExtractionError("Example", {
   cause: new Error("Cause"),
@@ -236,6 +261,15 @@ dom.window.matchMedia = () => ({
   removeEventListener() {},
   removeListener() {},
 });
+let copiedUrl = "";
+Object.defineProperty(dom.window.navigator, "clipboard", {
+  configurable: true,
+  value: {
+    async writeText(value) {
+      copiedUrl = value;
+    },
+  },
+});
 
 const act = React.act ?? domAct;
 const { PhotoDetailsLightbox } = await import("${packageManifest.name}");
@@ -265,8 +299,38 @@ const collapseButton = document.querySelector(
   '[aria-label="Collapse photo details"]',
 );
 const detailsBody = document.querySelector(".rpdl__body");
-if (!collapseButton || !detailsBody) {
+const shareButton = document.querySelector('[aria-label="Share photo"]');
+const zoomInButton = document.querySelector('[aria-label="Zoom in"]');
+const zoomOutButton = document.querySelector('[aria-label="Zoom out"]');
+const detailsMenuButton = document.querySelector(
+  '[data-testid="photo-details-menu-button"]',
+);
+if (
+  !collapseButton ||
+  !detailsBody ||
+  !shareButton ||
+  !zoomInButton ||
+  !zoomOutButton ||
+  !detailsMenuButton
+) {
   throw new Error("The photo details panel did not mount in the DOM.");
+}
+
+await act(async () => {
+  shareButton.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+  await Promise.resolve();
+});
+if (copiedUrl !== "http://localhost/") {
+  throw new Error("The Share control did not copy the safe page URL fallback.");
+}
+
+await act(async () => {
+  detailsMenuButton.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+});
+const detailsMenu = document.querySelector('[role="menu"]');
+const detailOptions = document.querySelectorAll('[role="menuitemradio"]');
+if (!detailsMenu || detailOptions.length !== 3) {
+  throw new Error("The photo detail-level menu did not mount in the DOM.");
 }
 
 await act(async () => {

@@ -40,6 +40,22 @@ export default function PrivacyPage() {
           analytics by this demo.
         </p>
 
+        <h2>Sharing a photograph</h2>
+        <p>
+          The Share control acts only after you select it. It asks the browser
+          or operating system to share the current demo page, without query or
+          fragment parameters, together with the displayed title and caption. If
+          a native share sheet is unavailable, the demo attempts to copy that
+          page URL to your clipboard instead.
+        </p>
+
+        <p>
+          Photo Details does not send that share payload to a library-owned
+          server, and the demo does not retain it. The browser, operating
+          system, clipboard, and any destination you choose may process the
+          information under their own policies.
+        </p>
+
         <h2>EXIF metadata</h2>
         <p>
           The optional EXIF helper runs only when an integrating application

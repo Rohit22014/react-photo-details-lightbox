@@ -38,6 +38,11 @@ const slides = [
     width: 2400,
     height: 1600,
     alt: "Snow blowing over a mountain ridge",
+    share: {
+      url: "/work/winter-ridge",
+      title: "Winter Ridge",
+      text: "Spindrift crossing the summit at last light.",
+    },
     photoMetadata: {
       title: "Winter Ridge",
       caption: "Spindrift crossing the summit at last light.",
@@ -79,6 +84,97 @@ export function PortfolioLightbox() {
 ```
 
 All metadata is optional. Empty fields and groups are left out of the inspector.
+
+## Viewer actions
+
+The wrapper shows Share, Zoom in/out, a three-dot detail-level menu, and Close
+by default. It installs YARL's Zoom plugin automatically and avoids adding it a
+second time when the same plugin reference is already present.
+
+```tsx
+<PhotoDetailsLightbox
+  open={open}
+  close={close}
+  slides={slides}
+  viewerActions={{
+    share: true,
+    zoom: true,
+    detailLevelMenu: true,
+  }}
+/>
+```
+
+Each option defaults to `true`. With no custom `toolbar.buttons`, their order is
+Share, Zoom in/out, details, then Close. Set an option to `false`, or pass
+`viewerActions={false}` to disable Share and automatic Zoom installation and
+use the original show/hide details toggle. A `Zoom` plugin explicitly supplied
+through `plugins` remains enabled. `allowDetailLevelChange={false}` also
+replaces the three-dot menu with that toggle.
+
+Sharing uses the current page URL without its query string or fragment by
+default, plus `photoMetadata.title` and `photoMetadata.caption` when present.
+Override the payload per slide with a URL string or object:
+
+```ts
+const slide = {
+  src: "/photos/winter-ridge.jpg",
+  share: {
+    url: "/work/winter-ridge",
+    title: "Winter Ridge",
+    text: "Spindrift crossing the summit at last light.",
+  },
+};
+```
+
+Relative URLs resolve against the page containing the viewer. Use
+`share: false` on a slide to disable its Share button. The control first tries
+the browser's native share sheet, then copies the resolved URL to the
+clipboard as a fallback. Share targets must resolve to credential-free HTTP(S)
+URLs; malformed URLs and other schemes are rejected. The control announces
+shared, copied, or unavailable status and never posts the payload to a service
+owned by this package.
+
+Labels are deliberately separated:
+
+```tsx
+<PhotoDetailsLightbox
+  open={open}
+  close={close}
+  slides={slides}
+  detailLabels={{
+    minimum: "Image only",
+    information: "Overview",
+    detailed: "Technical",
+    custom: "Field notes",
+  }}
+  lightboxLabels={{
+    Close: "Close viewer",
+    "Zoom in": "Magnify",
+    "Zoom out": "Reduce",
+  }}
+  viewerActions={{
+    labels: {
+      detailLevelMenu: "Choose photo information",
+      detailLevelMenuTitle: "Photo information",
+      hideDetails: "Hide photo information",
+      share: "Share this photograph",
+      shareCopied: "Photo link copied.",
+      shareSucceeded: "Photo shared.",
+      shareUnavailable: "Sharing is unavailable.",
+      showDetails: "Show photo information",
+    },
+  }}
+/>
+```
+
+`detailLabels` names this package's four modes. `lightboxLabels` is forwarded
+to standard YARL controls. The older `labels` prop remains a deprecated alias
+for detail-level labels. `viewerActions.labels` can also localize the visual
+menu title and the show/hide fallback labels.
+
+If the application supplies YARL's official Share plugin, set
+`viewerActions={{ share: false }}` to avoid showing both Share controls. Use the
+built-in control when the copy-link fallback is desired.
 
 ## Detail levels
 
@@ -133,6 +229,18 @@ import { PhotoDetails } from "react-photo-details-lightbox";
 ```
 
 Installing the plugin augments YARL's TypeScript declarations with `photoMetadata` on image slides and `photoDetails` on the lightbox props.
+
+The composable plugin adds Share and the detail-level control, but it does not
+install YARL's Zoom plugin. Include `Zoom` in `plugins`, as in the example.
+Automatic Zoom installation controlled by `viewerActions.zoom` is a
+`PhotoDetailsLightbox` wrapper feature. In direct YARL usage, standard control
+translations stay in the lightbox's `labels` prop and mode names belong in
+`photoDetails.detailLabels`.
+
+`PhotoDetailsZoomSettings` intentionally describes the Zoom options shared by
+the full supported YARL 3.x range. Use direct YARL composition when an
+integration needs version-specific Zoom callbacks, render slots, or newer
+settings from its installed YARL release.
 
 ## Custom sections
 
@@ -295,6 +403,11 @@ Browser-generated histograms also run inside that Client Component.
 Same-origin derivatives under `public/` need no extra CORS setup. Precomputed
 histograms are plain arrays and can cross a Server-to-Client boundary.
 
+Share actions also run only in the browser. The default page URL and relative
+per-slide `share` URLs are resolved when the viewer activates Share. A plain
+`share` object is serializable and can cross the Server-to-Client boundary with
+the slide.
+
 `PhotoDetailsLightbox` is safe to import normally from a Client Component. If a project specifically wants no server-rendered lightbox module, `ssr: false` must also be declared inside a Client Component:
 
 ```tsx
@@ -373,8 +486,15 @@ Main types:
 
 - `PhotoMetadata`
 - `PhotoDetailsLightboxProps`
+- `PhotoDetailsLightboxLabels`
 - `PhotoDetailsSettings`
 - `PhotoDetailsRenderSlots`
+- `PhotoDetailsZoomRef`
+- `PhotoDetailsZoomSettings`
+- `PhotoShareData`
+- `PhotoViewerActionLabels`
+- `PhotoViewerActions`
+- `PhotoViewerActionsSettings`
 - `PhotoHistogramOptions`
 - `RgbHistogramData`
 - `DetailLevel`

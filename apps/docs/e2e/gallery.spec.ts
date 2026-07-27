@@ -1,6 +1,12 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
+interface RecordedShareData {
+  text?: string;
+  title?: string;
+  url?: string;
+}
+
 const histogramFixture = `
   <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256">
     <defs>
@@ -16,6 +22,34 @@ const histogramFixture = `
 `;
 
 test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    const testWindow = window as typeof window & {
+      __rpdlShareCalls: Array<{
+        text?: string;
+        title?: string;
+        url?: string;
+      }>;
+    };
+
+    testWindow.__rpdlShareCalls = [];
+    Object.defineProperties(window.navigator, {
+      canShare: {
+        configurable: true,
+        value: () => true,
+      },
+      share: {
+        configurable: true,
+        value: async (data: ShareData) => {
+          testWindow.__rpdlShareCalls.push({
+            ...(data.text ? { text: data.text } : {}),
+            ...(data.title ? { title: data.title } : {}),
+            ...(data.url ? { url: data.url } : {}),
+          });
+        },
+      },
+    });
+  });
+
   await page.route("https://images.unsplash.com/**", async (route) => {
     const url = new URL(route.request().url());
 
@@ -51,8 +85,25 @@ test("opens a photograph and closes the lightbox", async ({ page }) => {
   await page.getByTestId("gallery-card-0").click();
 
   const closeButton = page.getByRole("button", { name: /close/i });
+  const toolbar = page.locator(".yarl__toolbar");
 
   await expect(closeButton).toBeVisible();
+  await expect(toolbar.getByRole("button")).toHaveCount(5);
+  await expect
+    .poll(() =>
+      toolbar
+        .getByRole("button")
+        .evaluateAll((buttons) =>
+          buttons.map((button) => button.getAttribute("aria-label")),
+        ),
+    )
+    .toEqual([
+      "Share photo",
+      "Zoom in",
+      "Zoom out",
+      "Choose photo detail level",
+      "Close",
+    ]);
   await expect(page.getByTestId("metadata-inspector")).toBeVisible();
   await expect(page.getByTestId("metadata-inspector")).toContainText(
     "Light Across the Ridge",
@@ -77,6 +128,10 @@ test("open lightbox has no serious or critical accessibility violations", async 
   await page.getByTestId("gallery-card-0").click();
   await expect(page.getByTestId("metadata-inspector")).toBeVisible();
   await expect(page.getByTestId("rgb-histogram-graph")).toBeVisible();
+  await page.getByTestId("photo-details-menu-button").click();
+  await expect(
+    page.getByRole("menu", { name: "Choose photo detail level" }),
+  ).toBeVisible();
 
   const results = await new AxeBuilder({ page })
     .include(".yarl__portal")
@@ -86,6 +141,118 @@ test("open lightbox has no serious or critical accessibility violations", async 
   );
 
   expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
+});
+
+test("shares the active photograph through the Web Share API", async ({
+  page,
+}) => {
+  await page.getByTestId("gallery-card-0").click();
+  await page.getByTestId("photo-share-button").click();
+
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (
+            window as typeof window & {
+              __rpdlShareCalls: RecordedShareData[];
+            }
+          ).__rpdlShareCalls,
+      ),
+    )
+    .toEqual([
+      {
+        text: "A lone walker pauses as the last light moves across the folded mountain valley.",
+        title: "Light Across the Ridge",
+        url: "http://localhost:3000/",
+      },
+    ]);
+  await expect(
+    page.getByRole("status").filter({ hasText: "Photo shared." }),
+  ).toBeVisible();
+});
+
+test("supports keyboard interaction in the photo detail menu", async ({
+  page,
+}) => {
+  await page.getByTestId("gallery-card-0").click();
+
+  const trigger = page.getByTestId("photo-details-menu-button");
+  await trigger.focus();
+  await trigger.press("Enter");
+  await expect(trigger).toHaveAttribute("aria-expanded", "true");
+
+  const menu = page.getByRole("menu", {
+    name: "Choose photo detail level",
+  });
+  const detailed = menu.getByRole("menuitemradio", { name: "Detailed" });
+  const custom = menu.getByRole("menuitemradio", { name: "Custom" });
+  await expect(menu.getByRole("menuitemradio")).toHaveCount(4);
+  await expect(detailed).toHaveAttribute("aria-checked", "true");
+  await expect(detailed).toBeFocused();
+
+  await detailed.press("ArrowDown");
+  await expect(custom).toBeFocused();
+  await custom.press("Enter");
+  await expect(menu).toBeHidden();
+  await expect(trigger).toBeFocused();
+  await expect(trigger).toHaveAccessibleName("Choose photo detail level");
+  await expect(trigger).toHaveAttribute("aria-expanded", "false");
+  await expect(page.getByTestId("metadata-inspector")).toContainText(
+    "From the field",
+  );
+  await expect(page.getByTestId("demo-detail-level-select")).toHaveValue(
+    "custom",
+  );
+
+  await trigger.press("Enter");
+  await expect(menu).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(menu).toBeHidden();
+  await expect(trigger).toBeFocused();
+  await expect(page.getByRole("button", { name: "Close" })).toBeVisible();
+
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("button", { name: "Close" })).toBeHidden();
+});
+
+test("zooms the active photograph with the toolbar controls", async ({
+  page,
+}) => {
+  await page.getByTestId("gallery-card-0").click();
+
+  const image = page.locator(".yarl__slide_current .yarl__slide_image");
+  const zoomIn = page.getByRole("button", { name: "Zoom in" });
+  const zoomOut = page.getByRole("button", { name: "Zoom out" });
+  await expect(image).toBeVisible();
+  await expect
+    .poll(() =>
+      image.evaluate((element) => (element as HTMLImageElement).naturalWidth),
+    )
+    .toBeGreaterThan(0);
+  await expect(zoomIn).toBeEnabled();
+  await expect(zoomOut).toBeDisabled();
+
+  const initialBox = await image.boundingBox();
+  expect(initialBox).not.toBeNull();
+  await zoomIn.click();
+  await expect(zoomOut).toBeEnabled();
+  await expect
+    .poll(async () => (await image.boundingBox())?.width ?? 0)
+    .toBeGreaterThan((initialBox?.width ?? 0) * 1.2);
+});
+
+test("renders a stable photo detail menu", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name.includes("mobile"));
+
+  await page.getByTestId("gallery-card-0").click();
+  await page.getByTestId("photo-details-menu-button").click();
+
+  await expect(
+    page.getByRole("menu", { name: "Choose photo detail level" }),
+  ).toHaveScreenshot("photo-detail-menu-dark.png", {
+    animations: "disabled",
+  });
 });
 
 test("shows an accessible RGB histogram only in detailed mode", async ({
@@ -202,4 +369,40 @@ test("expands and collapses the mobile details sheet", async ({
   await expect(body).not.toHaveAttribute("inert");
   await expect(body).not.toHaveAttribute("aria-hidden");
   await expect(body).toHaveAttribute("tabindex", "0");
+});
+
+test("keeps mobile toolbar actions and the detail menu within reach", async ({
+  page,
+}, testInfo) => {
+  test.skip(!testInfo.project.name.includes("mobile"));
+
+  await page.getByTestId("gallery-card-0").click();
+  const trigger = page.getByTestId("photo-details-menu-button");
+  const triggerBox = await trigger.boundingBox();
+  expect(triggerBox?.width ?? 0).toBeGreaterThanOrEqual(44);
+  expect(triggerBox?.height ?? 0).toBeGreaterThanOrEqual(44);
+
+  await trigger.click();
+  const menu = page.getByRole("menu", {
+    name: "Choose photo detail level",
+  });
+  await expect(menu).toBeVisible();
+
+  const viewport = page.viewportSize();
+  const menuBox = await menu.boundingBox();
+  expect(viewport).not.toBeNull();
+  expect(menuBox).not.toBeNull();
+  expect(menuBox?.x ?? -1).toBeGreaterThanOrEqual(0);
+  expect(menuBox?.y ?? -1).toBeGreaterThanOrEqual(0);
+  expect((menuBox?.x ?? 0) + (menuBox?.width ?? 0)).toBeLessThanOrEqual(
+    viewport?.width ?? 0,
+  );
+  expect((menuBox?.y ?? 0) + (menuBox?.height ?? 0)).toBeLessThanOrEqual(
+    viewport?.height ?? 0,
+  );
+
+  for (const option of await menu.getByRole("menuitemradio").all()) {
+    const optionBox = await option.boundingBox();
+    expect(optionBox?.height ?? 0).toBeGreaterThanOrEqual(44);
+  }
 });

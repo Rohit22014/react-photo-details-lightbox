@@ -16,6 +16,10 @@ and this project follows [Semantic Versioning](https://semver.org/).
 - Optional, lazy EXIF extraction helpers.
 - Opt-in RGB histograms with precomputed data, browser-side analysis, channel
   isolation, and accessible tonal summaries.
+- Wrapper-default Share and Zoom actions, including native sharing with a
+  copy-link fallback and per-slide share payloads.
+- An accessible three-dot menu for switching detail levels, with configurable
+  viewer-action, detail-level, and standard lightbox labels.
 - TypeScript, unit, browser, and accessibility checks.
 
 [Unreleased]: https://github.com/Rohit22014/react-photo-details-lightbox/commits/main

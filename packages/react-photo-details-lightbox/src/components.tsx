@@ -8,15 +8,11 @@ import {
   useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
-  type ReactNode,
 } from "react";
 import {
-  IconButton,
-  createIcon,
   isImageSlide,
   useController,
   useLightboxState,
-  type Label,
   type SlideImage,
 } from "yet-another-react-lightbox";
 import { usePhotoDetails } from "./context";
@@ -30,11 +26,6 @@ import type {
   ResolvedDetailField,
   ResolvedDetailSection,
 } from "./types";
-
-const DetailsIcon = createIcon(
-  "PhotoDetails",
-  <path d="M5 5.75h14M5 12h14M5 18.25h8M3 5.75h.01M3 12h.01M3 18.25h.01" />,
-);
 
 function DefaultField({ field }: PhotoDetailsFieldRenderProps) {
   return (
@@ -303,28 +294,4 @@ export function PhotoDetailsPanel() {
     });
   }
   return content;
-}
-
-export function PhotoDetailsButton() {
-  const { level, settings, toggleDetails } = usePhotoDetails();
-  const expanded = level !== "minimum";
-  const label = expanded ? "Hide photo details" : "Photo details";
-  if (settings.renderDetails?.toolbarButton) {
-    return settings.renderDetails.toolbarButton({
-      level,
-      expanded,
-      label,
-      onClick: toggleDetails,
-    }) as ReactNode;
-  }
-
-  return (
-    <IconButton
-      data-testid="photo-details-toggle"
-      icon={DetailsIcon}
-      label={label as Label}
-      onClick={toggleDetails}
-      className={expanded ? "rpdl__toolbar-button--active" : undefined}
-    />
-  );
 }

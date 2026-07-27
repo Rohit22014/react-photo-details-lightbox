@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ForwardedRef, ReactNode } from "react";
 import type {
   LightboxExternalProps,
   Plugin,
@@ -9,6 +9,86 @@ import type {
 export type DetailLevel = "minimum" | "information" | "detailed" | "custom";
 
 export type PhotoDetailsTheme = "dark" | "light" | "system";
+
+export interface PhotoShareData {
+  url?: string;
+  text?: string;
+  title?: string;
+}
+
+export interface PhotoViewerActionLabels {
+  detailLevelMenu: string;
+  detailLevelMenuTitle: string;
+  hideDetails: string;
+  share: string;
+  shareCopied: string;
+  shareSucceeded: string;
+  shareUnavailable: string;
+  showDetails: string;
+}
+
+export interface PhotoViewerActions {
+  /**
+   * Show the Share control. It uses the Web Share API when available and
+   * otherwise copies the resolved URL.
+   *
+   * @default true
+   */
+  share?: boolean;
+  /**
+   * Enable the wrapper's built-in Yet Another React Lightbox Zoom plugin.
+   *
+   * @default true
+   */
+  zoom?: boolean;
+  /**
+   * Use the three-dot toolbar menu to select the photo detail level.
+   *
+   * @default true
+   */
+  detailLevelMenu?: boolean;
+  /** Override labels and feedback used by the viewer action controls. */
+  labels?: Partial<PhotoViewerActionLabels>;
+}
+
+export type PhotoViewerActionsSettings = boolean | PhotoViewerActions;
+
+export interface PhotoDetailsZoomRef {
+  zoom: number;
+  maxZoom: number;
+  offsetX: number;
+  offsetY: number;
+  disabled: boolean;
+  zoomIn: () => void;
+  zoomOut: () => void;
+  changeZoom: (
+    targetZoom: number,
+    rapid?: boolean,
+    dx?: number,
+    dy?: number,
+  ) => void;
+}
+
+export interface PhotoDetailsZoomSettings {
+  ref?: ForwardedRef<PhotoDetailsZoomRef>;
+  maxZoomPixelRatio?: number;
+  zoomInMultiplier?: number;
+  /** @deprecated Supported for compatibility with older YARL releases. */
+  doubleTapDelay?: number;
+  /** @deprecated Supported for compatibility with older YARL releases. */
+  doubleClickDelay?: number;
+  doubleClickMaxStops?: number;
+  keyboardMoveDistance?: number;
+  wheelZoomDistanceFactor?: number;
+  /** @deprecated Supported for compatibility with older YARL releases. */
+  pinchZoomDistanceFactor?: number;
+  scrollToZoom?: boolean;
+}
+
+export type PhotoDetailsLightboxLabels = LightboxExternalProps["labels"] & {
+  "Zoom in"?: string;
+  "Zoom out"?: string;
+};
 
 export interface PhotoLocation {
   name?: string;
@@ -217,8 +297,11 @@ export interface PhotoDetailsSettings {
   renderDetails?: PhotoDetailsRenderSlots;
   formatters?: Partial<PhotoDetailsFormatters>;
   theme?: PhotoDetailsTheme;
+  /** @deprecated Use `detailLabels` for new wrapper integrations. */
   labels?: Partial<Record<DetailLevel, string>>;
+  detailLabels?: Partial<Record<DetailLevel, string>>;
   histogram?: boolean | PhotoHistogramOptions;
+  viewerActions?: PhotoViewerActionsSettings;
 }
 
 export interface PhotoDetailsPluginProps {
@@ -229,11 +312,19 @@ export type PhotoSlide = SlideImage & {
   photoMetadata?: PhotoMetadata;
   photoHistogram?: RgbHistogramData;
   photoHistogramSrc?: string;
+  share?: boolean | string | PhotoShareData;
 };
 
-export type PhotoDetailsLightboxProps = Omit<LightboxExternalProps, "plugins"> &
+export type PhotoDetailsLightboxProps = Omit<
+  LightboxExternalProps,
+  "labels" | "plugins" | "zoom"
+> &
   PhotoDetailsSettings & {
     plugins?: Plugin[];
+    /** Settings forwarded to the automatically installed Zoom plugin. */
+    zoom?: PhotoDetailsZoomSettings;
+    /** Labels forwarded to Yet Another React Lightbox controls. */
+    lightboxLabels?: PhotoDetailsLightboxLabels;
   };
 
 declare module "yet-another-react-lightbox" {
@@ -241,6 +332,7 @@ declare module "yet-another-react-lightbox" {
     photoMetadata?: PhotoMetadata;
     photoHistogram?: RgbHistogramData;
     photoHistogramSrc?: string;
+    share?: boolean | string | PhotoShareData;
   }
 
   interface LightboxProps {
@@ -249,5 +341,6 @@ declare module "yet-another-react-lightbox" {
 
   interface ToolbarButtonKeys {
     "photo-details": null;
+    "photo-share": null;
   }
 }
