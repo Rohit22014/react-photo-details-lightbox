@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ForwardedRef, ReactNode } from "react";
 import type {
   LightboxExternalProps,
   Plugin,
@@ -9,6 +9,87 @@ import type {
 export type DetailLevel = "minimum" | "information" | "detailed" | "custom";
 
 export type PhotoDetailsTheme = "dark" | "light" | "system";
+
+export interface PhotoShareData {
+  url?: string;
+  text?: string;
+  title?: string;
+}
+
+export interface PhotoViewerActionLabels {
+  detailLevelMenu: string;
+  /** @deprecated The three-dot control no longer opens an intermediate menu. */
+  detailLevelMenuTitle: string;
+  hideDetails: string;
+  share: string;
+  shareCopied: string;
+  shareSucceeded: string;
+  shareUnavailable: string;
+  showDetails: string;
+}
+
+export interface PhotoViewerActions {
+  /**
+   * Show the Share control. It uses the Web Share API when available and
+   * otherwise copies the resolved URL.
+   *
+   * @default true
+   */
+  share?: boolean;
+  /**
+   * Enable the wrapper's built-in Yet Another React Lightbox Zoom plugin.
+   *
+   * @default true
+   */
+  zoom?: boolean;
+  /**
+   * Show the three-dot toolbar button that directly toggles photo details.
+   *
+   * @default true
+   */
+  detailLevelMenu?: boolean;
+  /** Override labels and feedback used by the viewer action controls. */
+  labels?: Partial<PhotoViewerActionLabels>;
+}
+
+export type PhotoViewerActionsSettings = boolean | PhotoViewerActions;
+
+export interface PhotoDetailsZoomRef {
+  zoom: number;
+  maxZoom: number;
+  offsetX: number;
+  offsetY: number;
+  disabled: boolean;
+  zoomIn: () => void;
+  zoomOut: () => void;
+  changeZoom: (
+    targetZoom: number,
+    rapid?: boolean,
+    dx?: number,
+    dy?: number,
+  ) => void;
+}
+
+export interface PhotoDetailsZoomSettings {
+  ref?: ForwardedRef<PhotoDetailsZoomRef>;
+  maxZoomPixelRatio?: number;
+  zoomInMultiplier?: number;
+  /** @deprecated Supported for compatibility with older YARL releases. */
+  doubleTapDelay?: number;
+  /** @deprecated Supported for compatibility with older YARL releases. */
+  doubleClickDelay?: number;
+  doubleClickMaxStops?: number;
+  keyboardMoveDistance?: number;
+  wheelZoomDistanceFactor?: number;
+  /** @deprecated Supported for compatibility with older YARL releases. */
+  pinchZoomDistanceFactor?: number;
+  scrollToZoom?: boolean;
+}
+
+export type PhotoDetailsLightboxLabels = LightboxExternalProps["labels"] & {
+  "Zoom in"?: string;
+  "Zoom out"?: string;
+};
 
 export interface PhotoLocation {
   name?: string;
@@ -92,6 +173,36 @@ export interface PhotoMetadata {
   [key: string]: unknown;
 }
 
+export interface RgbHistogramData {
+  red: readonly number[];
+  green: readonly number[];
+  blue: readonly number[];
+}
+
+export interface PhotoHistogramOptions {
+  /**
+   * Analyze the active browser image when no valid precomputed histogram is
+   * available.
+   *
+   * @default true
+   */
+  autoGenerate?: boolean;
+  /**
+   * Longest edge, in pixels, used for browser-side sampling.
+   *
+   * @default 512
+   */
+  maxDimension?: number;
+  /**
+   * Detail levels in which the histogram is visible.
+   *
+   * @default ["detailed"]
+   */
+  levels?: readonly Exclude<DetailLevel, "minimum">[];
+}
+
+export type PhotoHistogramStatus = "loading" | "ready" | "unavailable";
+
 export interface DetailFieldContext {
   metadata: PhotoMetadata;
   slide: Slide;
@@ -139,6 +250,7 @@ export interface PhotoDetailsFormatters {
 export interface PhotoDetailsPanelRenderProps {
   level: DetailLevel;
   metadata?: PhotoMetadata;
+  onClose: () => void;
   slide?: Slide;
   sections: ResolvedDetailSection[];
   children: ReactNode;
@@ -157,13 +269,24 @@ export interface PhotoDetailsToolbarButtonRenderProps {
   level: DetailLevel;
   expanded: boolean;
   label: string;
+  buttonRef: ForwardedRef<HTMLButtonElement>;
   onClick: () => void;
+}
+
+export interface PhotoDetailsHistogramRenderProps {
+  status: PhotoHistogramStatus;
+  data?: RgbHistogramData;
+  slide: SlideImage;
+  canRetry: boolean;
+  retry: () => void;
+  children: ReactNode;
 }
 
 export interface PhotoDetailsRenderSlots {
   panel?: (props: PhotoDetailsPanelRenderProps) => ReactNode;
   section?: (props: PhotoDetailsSectionRenderProps) => ReactNode;
   field?: (props: PhotoDetailsFieldRenderProps) => ReactNode;
+  histogram?: (props: PhotoDetailsHistogramRenderProps) => ReactNode;
   toolbarButton?: (props: PhotoDetailsToolbarButtonRenderProps) => ReactNode;
   empty?: (props: { level: DetailLevel; slide?: Slide }) => ReactNode;
 }
@@ -172,12 +295,29 @@ export interface PhotoDetailsSettings {
   detailLevel?: DetailLevel;
   defaultDetailLevel?: DetailLevel;
   onDetailLevelChange?: (level: DetailLevel) => void;
+  /**
+   * Control whether the photo-details drawer is open.
+   *
+   * When omitted, the drawer manages its own open state and starts closed.
+   */
+  detailsOpen?: boolean;
+  /**
+   * Initial open state for an uncontrolled photo-details drawer.
+   *
+   * @default false
+   */
+  defaultDetailsOpen?: boolean;
+  onDetailsOpenChange?: (open: boolean) => void;
   allowDetailLevelChange?: boolean;
   customSections?: DetailSection[];
   renderDetails?: PhotoDetailsRenderSlots;
   formatters?: Partial<PhotoDetailsFormatters>;
   theme?: PhotoDetailsTheme;
+  /** @deprecated Use `detailLabels` for new wrapper integrations. */
   labels?: Partial<Record<DetailLevel, string>>;
+  detailLabels?: Partial<Record<DetailLevel, string>>;
+  histogram?: boolean | PhotoHistogramOptions;
+  viewerActions?: PhotoViewerActionsSettings;
 }
 
 export interface PhotoDetailsPluginProps {
@@ -186,16 +326,29 @@ export interface PhotoDetailsPluginProps {
 
 export type PhotoSlide = SlideImage & {
   photoMetadata?: PhotoMetadata;
+  photoHistogram?: RgbHistogramData;
+  photoHistogramSrc?: string;
+  share?: boolean | string | PhotoShareData;
 };
 
-export type PhotoDetailsLightboxProps = Omit<LightboxExternalProps, "plugins"> &
+export type PhotoDetailsLightboxProps = Omit<
+  LightboxExternalProps,
+  "labels" | "plugins" | "zoom"
+> &
   PhotoDetailsSettings & {
     plugins?: Plugin[];
+    /** Settings forwarded to the automatically installed Zoom plugin. */
+    zoom?: PhotoDetailsZoomSettings;
+    /** Labels forwarded to Yet Another React Lightbox controls. */
+    lightboxLabels?: PhotoDetailsLightboxLabels;
   };
 
 declare module "yet-another-react-lightbox" {
   interface SlideImage {
     photoMetadata?: PhotoMetadata;
+    photoHistogram?: RgbHistogramData;
+    photoHistogramSrc?: string;
+    share?: boolean | string | PhotoShareData;
   }
 
   interface LightboxProps {
@@ -204,5 +357,6 @@ declare module "yet-another-react-lightbox" {
 
   interface ToolbarButtonKeys {
     "photo-details": null;
+    "photo-share": null;
   }
 }

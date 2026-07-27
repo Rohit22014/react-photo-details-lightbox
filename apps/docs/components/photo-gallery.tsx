@@ -79,8 +79,9 @@ export function PhotoGallery() {
           <span aria-hidden="true">⌄</span>
         </label>
         <p>
-          The chosen preset follows you through the gallery. You can also change
-          it from inside the viewer.
+          The chosen preset follows you through the gallery. Details stay closed
+          until you press the three dots, then open immediately on the right—or
+          full screen on a phone.
         </p>
       </div>
 
@@ -146,6 +147,7 @@ export function PhotoGallery() {
         detailLevel={detailLevel}
         allowDetailLevelChange
         customSections={customSections}
+        histogram
         onDetailLevelChange={setDetailLevel}
       />
     </>

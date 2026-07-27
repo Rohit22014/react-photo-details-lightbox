@@ -2,6 +2,7 @@ import type { PhotoMetadata } from "react-photo-details-lightbox";
 
 interface DemoPhoto {
   src: string;
+  photoHistogramSrc: string;
   width: number;
   height: number;
   alt: string;
@@ -17,6 +18,8 @@ const unsplashLicenseUrl = "https://unsplash.com/license";
 export const photos = [
   {
     src: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=2400&q=88",
+    photoHistogramSrc:
+      "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=max&w=512&q=80",
     width: 2400,
     height: 1600,
     alt: "A lone hiker standing on a sunlit mountain ridge",
@@ -73,6 +76,8 @@ export const photos = [
   },
   {
     src: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=2400&q=88",
+    photoHistogramSrc:
+      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=max&w=512&q=80",
     width: 2400,
     height: 1600,
     alt: "Clear turquoise water meeting a pale beach beneath open sky",
@@ -128,6 +133,8 @@ export const photos = [
   },
   {
     src: "https://images.unsplash.com/photo-1509316785289-025f5b846b35?auto=format&fit=crop&w=1600&h=2400&q=88",
+    photoHistogramSrc:
+      "https://images.unsplash.com/photo-1509316785289-025f5b846b35?auto=format&fit=max&w=512&q=80",
     width: 1600,
     height: 2400,
     alt: "Sandstone buttes rising from a vast ochre desert",
@@ -183,6 +190,8 @@ export const photos = [
   },
   {
     src: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=2400&q=88",
+    photoHistogramSrc:
+      "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=max&w=512&q=80",
     width: 2400,
     height: 1600,
     alt: "Sunbeams passing between tall trees in a green forest",
@@ -237,6 +246,8 @@ export const photos = [
   },
   {
     src: "https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=crop&w=2400&q=88",
+    photoHistogramSrc:
+      "https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=max&w=512&q=80",
     width: 2400,
     height: 1600,
     alt: "A misty hillside meadow glowing at sunrise",
@@ -292,6 +303,8 @@ export const photos = [
   },
   {
     src: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=2400&q=88",
+    photoHistogramSrc:
+      "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=max&w=512&q=80",
     width: 2400,
     height: 1600,
     alt: "Wooden rowboats crossing a turquoise lake below steep peaks",

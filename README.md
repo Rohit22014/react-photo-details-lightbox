@@ -14,11 +14,13 @@ A photography-first metadata inspector for [Yet Another React Lightbox](https://
 ## Highlights
 
 - Four presentation levels: `minimum`, `information`, `detailed`, and `custom`
-- A responsive side inspector on desktop and bottom sheet on small screens
+- An on-demand right-side inspector on desktop and full-screen details view on phones
+- Built-in Share, Zoom, and a direct three-dot Photo information control
 - Dark, light, and system themes with CSS custom properties
 - A convenient `PhotoDetailsLightbox` wrapper and a composable `PhotoDetails` YARL plugin
 - Typed metadata and custom section schemas
 - Optional, lazy EXIF extraction from user-provided sources
+- Opt-in RGB histograms from precomputed data or browser-side image analysis
 - React 18.2–19 and Next.js App Router support
 - Keyboard, focus, reduced-motion, and screen-reader friendly interactions
 
@@ -80,9 +82,15 @@ import { PhotoDetailsLightbox } from "react-photo-details-lightbox";
 const slides = [
   {
     src: "/photos/atlantic-dawn.jpg",
+    photoHistogramSrc: "/photos/atlantic-dawn-histogram.jpg",
     width: 2400,
     height: 1600,
     alt: "Warm dawn light over the Atlantic coast",
+    share: {
+      url: "/photographs/atlantic-dawn",
+      title: "Atlantic Dawn",
+      text: "First light above the sea cliffs.",
+    },
     photoMetadata: {
       title: "Atlantic Dawn",
       caption: "First light above the sea cliffs.",
@@ -120,6 +128,7 @@ export function GalleryLightbox() {
         close={() => setOpen(false)}
         slides={slides}
         defaultDetailLevel="detailed"
+        histogram
         theme="system"
       />
     </>
@@ -128,6 +137,104 @@ export function GalleryLightbox() {
 ```
 
 Metadata is optional. Missing values and empty sections are omitted instead of being rendered as placeholders.
+
+## Viewer actions
+
+`PhotoDetailsLightbox` includes Share, Zoom in/out, a three-dot Photo
+information button, and Close controls by default. The wrapper also installs
+YARL's Zoom plugin unless the application already supplied it. Configure or
+disable the defaults with `viewerActions`:
+
+```tsx
+<PhotoDetailsLightbox
+  open={open}
+  close={close}
+  slides={slides}
+  viewerActions={{
+    share: true,
+    zoom: true,
+    detailLevelMenu: true,
+  }}
+/>
+```
+
+All three viewer-action options default to `true`. When `toolbar.buttons` is
+not supplied, the wrapper orders the controls as Share, Zoom in/out, details,
+and Close.
+
+The inspector starts closed, independently of the selected detail level.
+Pressing the three-dot button opens it immediately as a right-side drawer on
+desktop or a full-screen details view on phones. Information, Detailed, and
+Custom remain available from the selector inside the panel. Choosing Minimum
+or the panel's close button hides it without discarding the last non-minimum
+selection.
+
+Set `share: false` to remove Share, `zoom: false` to skip automatic Zoom
+installation, or `detailLevelMenu: false` to use the simple show/hide details
+toggle. `viewerActions={false}` applies all three changes. A `Zoom` plugin
+supplied explicitly through `plugins` remains enabled. Setting
+`allowDetailLevelChange={false}` also uses the show/hide toggle. The `custom`
+selector choice appears only when `customSections` contains at least one
+section.
+
+The Share control resolves each image slide as follows:
+
+- `share: false` disables sharing for that slide.
+- A `share` string is used as its URL; relative values resolve against the
+  current page.
+- A `share: { url, title, text }` object overrides any part of the payload.
+- With no `share` value, the current page URL without its query string or
+  fragment is shared with the photo title and caption, when present.
+
+Explicit share targets must be valid, credential-free HTTP(S) URLs. Other
+schemes and malformed URLs are rejected instead of being copied.
+
+The browser's native share sheet is preferred. If it is missing, rejects the
+payload, or fails for a reason other than cancellation, the control copies the
+resolved URL to the clipboard. If neither browser capability is available, it
+announces that sharing is unavailable. The lightbox does not send the share
+payload to a package-owned service.
+
+Use `detailLabels` for the four detail-level names, `lightboxLabels` for
+standard YARL controls, and `viewerActions.labels` for the new action labels
+and feedback:
+
+```tsx
+<PhotoDetailsLightbox
+  open={open}
+  close={close}
+  slides={slides}
+  detailLabels={{
+    minimum: "Image only",
+    information: "Overview",
+    detailed: "Technical",
+    custom: "Field notes",
+  }}
+  lightboxLabels={{
+    Close: "Close viewer",
+    "Zoom in": "Magnify",
+    "Zoom out": "Reduce",
+  }}
+  viewerActions={{
+    labels: {
+      detailLevelMenu: "Open photo information",
+      hideDetails: "Hide photo information",
+      share: "Share this photograph",
+      shareCopied: "Photo link copied.",
+      showDetails: "Show photo information",
+    },
+  }}
+/>
+```
+
+The legacy `labels` prop remains an alias for detail-level labels. New wrapper
+integrations should use `detailLabels`; `lightboxLabels` is the prop forwarded
+to YARL. `viewerActions.labels` can also localize the direct three-dot action
+and the show/hide fallback labels.
+
+If an application already uses YARL's official Share plugin, set
+`viewerActions={{ share: false }}` to keep only that control. The built-in
+control is the option that provides this package's copy-link fallback.
 
 ## Detail levels
 
@@ -138,7 +245,7 @@ Metadata is optional. Missing values and empty sections are omitted instead of b
 | `detailed`    | Story, equipment, exposure, location, file, creator, and rights groups |
 | `custom`      | Only the sections and fields supplied through `customSections`         |
 
-The viewer can switch levels by default. Set `allowDetailLevelChange={false}` to lock the selected level.
+The viewer can switch levels by default. Set `allowDetailLevelChange={false}` to lock the selected level. `defaultDetailLevel` chooses the initial mode; it does not open the inspector.
 
 Use `defaultDetailLevel` for uncontrolled state:
 
@@ -170,6 +277,22 @@ const [detailLevel, setDetailLevel] = useState<DetailLevel>("detailed");
 
 An uncontrolled choice lasts only while the lightbox component remains mounted. The library does not write it to browser storage.
 
+The drawer can also be controlled explicitly with `detailsOpen` and
+`onDetailsOpenChange`, or initialized open with `defaultDetailsOpen`. The
+default is closed:
+
+```tsx
+const [detailsOpen, setDetailsOpen] = useState(false);
+
+<PhotoDetailsLightbox
+  open={open}
+  close={close}
+  slides={slides}
+  detailsOpen={detailsOpen}
+  onDetailsOpenChange={setDetailsOpen}
+/>;
+```
+
 ## Compose it as a YARL plugin
 
 Use `PhotoDetails` when your application already composes YARL plugins or needs the underlying `Lightbox` component directly:
@@ -195,6 +318,19 @@ import { PhotoDetails } from "react-photo-details-lightbox";
 ```
 
 The plugin augments YARL's types with the slide `photoMetadata` field and the top-level `photoDetails` settings. Existing navigation, zoom, fullscreen, preload, RTL, and lifecycle behavior remains owned by YARL.
+
+The composable `PhotoDetails` plugin adds the Share action and detail-level
+control, but it cannot install another plugin. Add YARL's `Zoom` plugin
+explicitly, as shown above. `viewerActions.zoom` is an automatic-install flag
+on `PhotoDetailsLightbox` only. With the underlying YARL component, keep
+standard control translations in its `labels` prop and detail-level names in
+`photoDetails.detailLabels`.
+
+To stay compatible with every supported YARL 3.x peer, the wrapper's
+`PhotoDetailsZoomSettings` type covers the Zoom settings common to the minimum
+supported release. For version-specific Zoom callbacks, render slots, or newer
+settings, use direct YARL composition with `PhotoDetails` and the installed
+`Zoom` plugin.
 
 ## Custom mode
 
@@ -232,7 +368,83 @@ const customSections: DetailSection[] = [
 />;
 ```
 
-`DetailField` also supports `getValue`, `format`, and `hidden` for computed values, presentation overrides, and conditional visibility. `DetailSection` supports `hidden`. Use the `renderDetails` slots when an application needs to replace the panel, section, field, toolbar control, or empty presentation.
+`DetailField` also supports `getValue`, `format`, and `hidden` for computed
+values, presentation overrides, and conditional visibility. `DetailSection`
+supports `hidden`. Use the `renderDetails` slots when an application needs to
+replace the panel, section, field, toolbar control, or empty presentation. A
+custom panel receives `onClose`, and a custom toolbar control receives
+`buttonRef`; attach that ref to the actual trigger so focus returns correctly
+after the panel closes.
+
+## Optional RGB histogram
+
+Set `histogram` to opt in. By default, it appears only in `detailed` mode and
+analyzes the active image in the browser at a maximum 512-pixel edge. The
+default graph overlays RGB and lets viewers isolate the red, green, or blue
+channel while retaining a screen-reader tonal summary:
+
+```tsx
+<PhotoDetailsLightbox open={open} close={close} slides={slides} histogram />
+```
+
+Use the options form to change the sampling size or the detail levels where it
+appears:
+
+```tsx
+<PhotoDetailsLightbox
+  open={open}
+  close={close}
+  slides={slides}
+  histogram={{
+    autoGenerate: true,
+    maxDimension: 512,
+    levels: ["information", "detailed"],
+  }}
+/>
+```
+
+Automatic analysis uses `photoHistogramSrc` when supplied, then a suitable
+`srcSet` candidate, then `src`. Prefer a small derivative that has the same
+crop and color treatment as the displayed photograph:
+
+```ts
+const slide = {
+  src: "/photos/full-size.jpg",
+  photoHistogramSrc: "/photos/histogram-512.jpg",
+};
+```
+
+Remote images must allow cross-origin browser access. A photograph can still
+display when its host blocks CORS, but its pixels cannot be read for a
+histogram. The inspector reports the histogram as unavailable without hiding
+the image or metadata. A Content Security Policy must also allow the analysis
+origin through `connect-src`; allowing it only through `img-src` is not enough
+for the separate fetch.
+
+For deterministic rendering and no client-side fetch, supply precomputed bins.
+Each channel must contain exactly 256 finite, non-negative numbers:
+
+```ts
+import type { RgbHistogramData } from "react-photo-details-lightbox";
+
+const histogram: RgbHistogramData = {
+  red: redBins,
+  green: greenBins,
+  blue: blueBins,
+};
+
+const slide = {
+  src: "/photos/full-size.jpg",
+  photoHistogram: histogram,
+};
+```
+
+Valid `photoHistogram` data takes precedence over image analysis. Set
+`autoGenerate: false` to accept only precomputed data. The graph is an 8-bit,
+display-referred RGB summary for the browser-renderable derivative; it is not a
+RAW sensor, linear-light, wide-gamut, or HDR analysis tool. HEIF/HEIC and camera
+RAW files are not converted by the lightbox. Generate an AVIF, WebP, or JPEG
+derivative during ingestion, or compute and supply the bins on the server.
 
 ## Next.js App Router
 
@@ -278,6 +490,7 @@ export function PhotoLightbox({ slides }: { slides: PhotoSlide[] }) {
         close={() => setOpen(false)}
         slides={slides}
         defaultDetailLevel="information"
+        histogram
       />
     </>
   );
@@ -285,6 +498,16 @@ export function PhotoLightbox({ slides }: { slides: PhotoSlide[] }) {
 ```
 
 Replace `PhotoSlide` with your application's serializable slide type. When slides cross a Server-to-Client boundary, pass strings, numbers, booleans, arrays, and plain objects—not `File`, `Blob`, functions, or other non-serializable values.
+
+Histogram generation also runs in this Client Component. Same-origin files
+under `public/` work without extra CORS configuration. If a Server Component
+precomputes `photoHistogram`, pass its three plain 256-number arrays across the
+boundary.
+
+Viewer actions run on the client as well. Relative `share` URLs and the default
+current-page URL are resolved only when the viewer activates Share. Plain
+`share` payload objects can cross a Server-to-Client boundary with the rest of
+the slide.
 
 ### Optional client-only dynamic import
 
@@ -314,7 +537,9 @@ Next.js does not allow `ssr: false` in a Server Component. Keep this wrapper beh
 
 ## Optional EXIF extraction
 
-The core lightbox never downloads an image or extracts metadata on its own. This avoids surprise network requests, CORS failures, and main-thread work. The optional `exif` entry point lazily loads its parser only when extraction is requested:
+EXIF extraction never runs unless the application calls the optional helper,
+which lazily loads its parser. The separately opt-in RGB histogram can fetch
+the configured analysis source, but it does not extract or upload EXIF data:
 
 ```tsx
 import {
@@ -367,8 +592,17 @@ import {
 import type {
   PhotoMetadata,
   PhotoDetailsLightboxProps,
+  PhotoDetailsLightboxLabels,
   PhotoDetailsSettings,
   PhotoDetailsRenderSlots,
+  PhotoDetailsZoomRef,
+  PhotoDetailsZoomSettings,
+  PhotoShareData,
+  PhotoViewerActionLabels,
+  PhotoViewerActions,
+  PhotoViewerActionsSettings,
+  PhotoHistogramOptions,
+  RgbHistogramData,
   DetailLevel,
   DetailSection,
   DetailField,

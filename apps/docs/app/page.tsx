@@ -8,7 +8,9 @@ const installCommand =
 const repositoryUrl =
   "https://github.com/Rohit22014/react-photo-details-lightbox";
 
-const codeSample = `import { PhotoDetailsLightbox } from "react-photo-details-lightbox";
+const codeSample = `"use client";
+
+import { PhotoDetailsLightbox } from "react-photo-details-lightbox";
 import "yet-another-react-lightbox/styles.css";
 import "react-photo-details-lightbox/styles.css";
 
@@ -16,7 +18,10 @@ import "react-photo-details-lightbox/styles.css";
   open={open}
   close={() => setOpen(false)}
   slides={photos}
-  detailLevel="detailed"
+  defaultDetailLevel="detailed"
+  viewerActions={{ share: true, zoom: true, detailLevelMenu: true }}
+  detailLabels={{ detailed: "Technical" }}
+  lightboxLabels={{ Close: "Close viewer" }}
 />`;
 
 const features = [
@@ -33,7 +38,7 @@ const features = [
   {
     number: "03",
     title: "From quiet to comprehensive",
-    body: "Move between minimum, information, detailed and custom views without leaving the photograph.",
+    body: "Share and zoom freely, then open the on-demand details drawer only when you want information, detailed or custom context.",
   },
 ];
 
@@ -153,8 +158,8 @@ export default function HomePage() {
             <h2>Look closer.</h2>
           </div>
           <p>
-            Select a detail level, then open any frame. Navigate, zoom and
-            inspect exactly as your audience would.
+            Open any frame, then share, zoom or press the three dots to open its
+            photographic information immediately.
           </p>
         </div>
         <PhotoGallery />
@@ -170,15 +175,16 @@ export default function HomePage() {
           </h2>
           <p>
             Use the ready-made component or add the Photo Details plugin to your
-            existing Yet Another React Lightbox setup. Typed metadata, render
-            slots and CSS variables make it yours.
+            existing Yet Another React Lightbox setup. The wrapper includes
+            Share, Zoom and the direct details button; typed metadata, labels,
+            render slots and CSS variables make it yours.
           </p>
           <ul className="api-points">
             <li>
               <span>01</span>Works with the App Router
             </li>
             <li>
-              <span>02</span>SSR-safe package imports
+              <span>02</span>Share and Zoom defaults included
             </li>
             <li>
               <span>03</span>No backend required

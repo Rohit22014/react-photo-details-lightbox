@@ -103,6 +103,7 @@ try {
         devDependencies: {
           "@types/react": reactTypesVersion,
           "@types/react-dom": reactDomTypesVersion,
+          jsdom: "^26.1.0",
           typescript: "^5.9.0",
         },
       },
@@ -114,12 +115,39 @@ try {
   await writeFile(
     path.join(stagingDirectory, "consumer.tsx"),
     `import { ExifExtractionError } from "${packageManifest.name}/exif";
-import type { PhotoDetailsLightboxProps as RootProps } from "${packageManifest.name}";
+import type {
+  PhotoDetailsLightboxProps as RootProps,
+  PhotoDetailsZoomRef,
+} from "${packageManifest.name}";
 
+const zoomRef: { current: PhotoDetailsZoomRef | null } = { current: null };
 const props: RootProps = {
   close() {},
   open: false,
-  slides: [],
+  detailsOpen: false,
+  detailLabels: { detailed: "Technical" },
+  lightboxLabels: {
+    Close: "Dismiss",
+    "Zoom in": "Magnify",
+    "Zoom out": "Reduce",
+  },
+  slides: [
+    {
+      share: {
+        title: "Compatibility photograph",
+        url: "/work/compatibility-photograph",
+      },
+      src: "/compatibility.jpg",
+    },
+  ],
+  viewerActions: {
+    detailLevelMenu: true,
+    labels: { share: "Share this photograph" },
+    share: true,
+    zoom: true,
+  },
+  onDetailsOpenChange() {},
+  zoom: { maxZoomPixelRatio: 2, ref: zoomRef },
 };
 const error = new ExifExtractionError("Example", {
   cause: new Error("Cause"),
@@ -188,6 +216,147 @@ if (!exif.isExifSourceSupported(new ArrayBuffer(0))) {
 `,
   );
 
+  await writeFile(
+    path.join(stagingDirectory, "browser-smoke.mjs"),
+    `import { JSDOM } from "jsdom";
+import React from "react";
+import { createRoot } from "react-dom/client";
+import { act as domAct } from "react-dom/test-utils";
+
+const dom = new JSDOM("<!doctype html><html><body><div id=\\"root\\"></div></body></html>", {
+  url: "http://localhost/",
+});
+
+Object.defineProperties(globalThis, {
+  document: { configurable: true, value: dom.window.document },
+  Element: { configurable: true, value: dom.window.Element },
+  Event: { configurable: true, value: dom.window.Event },
+  getComputedStyle: {
+    configurable: true,
+    value: dom.window.getComputedStyle.bind(dom.window),
+  },
+  HTMLElement: { configurable: true, value: dom.window.HTMLElement },
+  MouseEvent: { configurable: true, value: dom.window.MouseEvent },
+  MutationObserver: {
+    configurable: true,
+    value: dom.window.MutationObserver,
+  },
+  navigator: { configurable: true, value: dom.window.navigator },
+  Node: { configurable: true, value: dom.window.Node },
+  window: { configurable: true, value: dom.window },
+});
+
+class ResizeObserverMock {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+globalThis.ResizeObserver = ResizeObserverMock;
+globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+dom.window.matchMedia = () => ({
+  addEventListener() {},
+  addListener() {},
+  matches: false,
+  media: "",
+  onchange: null,
+  removeEventListener() {},
+  removeListener() {},
+});
+let copiedUrl = "";
+Object.defineProperty(dom.window.navigator, "clipboard", {
+  configurable: true,
+  value: {
+    async writeText(value) {
+      copiedUrl = value;
+    },
+  },
+});
+
+const act = React.act ?? domAct;
+const { PhotoDetailsLightbox } = await import("${packageManifest.name}");
+const container = document.getElementById("root");
+const root = createRoot(container);
+
+await act(async () => {
+  root.render(
+    React.createElement(PhotoDetailsLightbox, {
+      close() {},
+      defaultDetailLevel: "detailed",
+      open: true,
+      slides: [
+        {
+          alt: "Compatibility test photograph",
+          height: 800,
+          photoMetadata: { title: "Compatibility test" },
+          src: "/compatibility.jpg",
+          width: 1200,
+        },
+      ],
+    }),
+  );
+});
+
+const shareButton = document.querySelector('[aria-label="Share photo"]');
+const zoomInButton = document.querySelector('[aria-label="Zoom in"]');
+const zoomOutButton = document.querySelector('[aria-label="Zoom out"]');
+const detailsButton = document.querySelector(
+  '[data-testid="photo-details-button"]',
+);
+if (
+  !shareButton ||
+  !zoomInButton ||
+  !zoomOutButton ||
+  !detailsButton
+) {
+  throw new Error("The lightbox viewer actions did not mount in the DOM.");
+}
+if (document.querySelector('[data-testid="metadata-inspector"]')) {
+  throw new Error("The photo details panel should start closed.");
+}
+
+await act(async () => {
+  shareButton.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+  await Promise.resolve();
+});
+if (copiedUrl !== "http://localhost/") {
+  throw new Error("The Share control did not copy the safe page URL fallback.");
+}
+
+await act(async () => {
+  detailsButton.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+});
+const detailsPanel = document.querySelector(
+  '[data-testid="metadata-inspector"]',
+);
+const detailsBody = document.querySelector(".rpdl__body");
+const closeDetailsButton = document.querySelector(
+  '[aria-label="Close photo details"]',
+);
+if (
+  !detailsPanel ||
+  !detailsBody ||
+  !closeDetailsButton ||
+  detailsBody.getAttribute("tabindex") !== "0"
+) {
+  throw new Error("The three-dot button did not open photo details directly.");
+}
+if (document.querySelector('[role="menu"]')) {
+  throw new Error("The three-dot button unexpectedly opened a chooser menu.");
+}
+
+await act(async () => {
+  closeDetailsButton.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+});
+if (document.querySelector('[data-testid="metadata-inspector"]')) {
+  throw new Error("The photo details close control did not hide the panel.");
+}
+
+await act(async () => root.unmount());
+dom.window.close();
+`,
+  );
+
   run(
     "npm",
     ["install", "--ignore-scripts", "--no-audit", "--no-fund"],
@@ -226,6 +395,7 @@ if (!exif.isExifSourceSupported(new ArrayBuffer(0))) {
 
   run("node", ["smoke.mjs"], stagingDirectory);
   run("node", ["smoke.cjs"], stagingDirectory);
+  run("node", ["browser-smoke.mjs"], stagingDirectory);
   run(
     "node",
     ["node_modules/typescript/bin/tsc", "--project", "tsconfig.json"],
