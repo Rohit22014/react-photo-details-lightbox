@@ -1,0 +1,32 @@
+{
+  "name": "@photo-details/docs",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "playwright test",
+    "build:cloudflare": "next build && opennextjs-cloudflare build --skipNextBuild",
+    "preview:cloudflare": "npm run build:cloudflare && opennextjs-cloudflare preview",
+    "deploy:cloudflare": "npm run build:cloudflare && opennextjs-cloudflare deploy"
+  },
+  "dependencies": {
+    "next": "^16.2.12",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "react-photo-details-lightbox": "*",
+    "yet-another-react-lightbox": "3.32.1"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
+    "@opennextjs/cloudflare": "1.20.2",
+    "@playwright/test": "^1.58.0",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "typescript": "^5.9.0",
+    "wrangler": "^4.58.0"
+  }
+}

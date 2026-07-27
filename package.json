@@ -1,0 +1,24 @@
+{
+  "name": "react-photo-details-lightbox-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace react-photo-details-lightbox && npm run build --workspace @photo-details/docs",
+    "build:package": "npm run build --workspace react-photo-details-lightbox",
+    "build:site": "npm run build --workspace @photo-details/docs",
+    "build:cloudflare": "npm run build:package && npm run build:cloudflare --workspace @photo-details/docs",
+    "dev": "npm run dev --workspace @photo-details/docs",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspace react-photo-details-lightbox",
+    "test:e2e": "npm run test:e2e --workspace @photo-details/docs",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=20.9.0"
+  }
+}
