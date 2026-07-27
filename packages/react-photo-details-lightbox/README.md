@@ -111,6 +111,11 @@ use the original show/hide details toggle. A `Zoom` plugin explicitly supplied
 through `plugins` remains enabled. `allowDetailLevelChange={false}` also
 replaces the three-dot menu with that toggle.
 
+The selected level and panel visibility are independent. The inspector starts
+closed; choosing Information, Detailed, or Custom from the three-dot menu opens
+a right-side desktop drawer or a full-screen phone view. Choosing Minimum or
+the panel's close button hides it while preserving the last non-minimum mode.
+
 Sharing uses the current page URL without its query string or fragment by
 default, plus `photoMetadata.title` and `photoMetadata.caption` when present.
 Override the payload per slide with a URL string or object:
@@ -183,7 +188,7 @@ built-in control when the copy-link fallback is desired.
 - `detailed` adds story, equipment, exposure, file, creator, and rights groups.
 - `custom` renders the supplied `customSections`.
 
-Viewers can choose among available levels unless `allowDetailLevelChange={false}`. Use `defaultDetailLevel` for local state, or control the value:
+Viewers can choose among available levels unless `allowDetailLevelChange={false}`. Use `defaultDetailLevel` for local state, or control the value. Selecting a default level does not open the inspector:
 
 ```tsx
 import { useState } from "react";
@@ -202,6 +207,10 @@ const [level, setLevel] = useState<DetailLevel>("information");
 ```
 
 The uncontrolled selection is retained only while the component is mounted. No preference is stored in `localStorage` or another browser store.
+
+Use `detailsOpen` with `onDetailsOpenChange` to control the drawer, or
+`defaultDetailsOpen` to opt into an initially open uncontrolled drawer. It is
+closed by default.
 
 ## Plugin usage
 
@@ -279,7 +288,13 @@ const customSections: DetailSection[] = [
 />;
 ```
 
-A `DetailField` may instead supply `getValue`, and may define `format` or `hidden`. A `DetailSection` may also define `hidden`. Use `renderDetails` to override the provided panel, section, field, toolbar control, or empty presentation while retaining the lightbox state and metadata model.
+A `DetailField` may instead supply `getValue`, and may define `format` or
+`hidden`. A `DetailSection` may also define `hidden`. Use `renderDetails` to
+override the provided panel, section, field, toolbar control, or empty
+presentation while retaining the lightbox state and metadata model. A custom
+panel receives `onClose`, and a custom toolbar control receives `buttonRef`;
+attach that ref to the actual trigger so focus returns correctly after the
+panel closes.
 
 ## RGB histogram
 

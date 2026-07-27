@@ -4,9 +4,11 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
+  type MutableRefObject,
   type PropsWithChildren,
 } from "react";
 import { useLightboxProps } from "yet-another-react-lightbox";
@@ -26,7 +28,11 @@ const levelNames: Record<DetailLevel, string> = {
 const defaultSettings: PhotoDetailsSettings = {};
 
 interface PhotoDetailsContextValue {
+  closeDetails: () => void;
+  detailsTriggerRef: MutableRefObject<HTMLButtonElement | null>;
+  detailsOpen: boolean;
   level: DetailLevel;
+  openDetails: () => void;
   setLevel: (level: DetailLevel) => void;
   toggleDetails: () => void;
   settings: PhotoDetailsSettings;
@@ -45,6 +51,10 @@ export function PhotoDetailsProvider({ children }: PropsWithChildren) {
   const [internalLevel, setInternalLevel] = useState<DetailLevel>(
     settings.defaultDetailLevel ?? "information",
   );
+  const [internalDetailsOpen, setInternalDetailsOpen] = useState(
+    settings.defaultDetailsOpen ?? false,
+  );
+  const detailsTriggerRef = useRef<HTMLButtonElement | null>(null);
   const lastVisibleLevel = useRef<Exclude<DetailLevel, "minimum">>(
     settings.defaultDetailLevel && settings.defaultDetailLevel !== "minimum"
       ? settings.defaultDetailLevel
@@ -65,20 +75,50 @@ export function PhotoDetailsProvider({ children }: PropsWithChildren) {
   const level = availableLevels.includes(requestedLevel)
     ? requestedLevel
     : "detailed";
+  const detailsOpen = settings.detailsOpen ?? internalDetailsOpen;
+  const onDetailLevelChange = settings.onDetailLevelChange;
+  const onDetailsOpenChange = settings.onDetailsOpenChange;
+
+  const setDetailsOpen = useCallback(
+    (nextOpen: boolean) => {
+      if (nextOpen === detailsOpen) return;
+      setInternalDetailsOpen(nextOpen);
+      onDetailsOpenChange?.(nextOpen);
+    },
+    [detailsOpen, onDetailsOpenChange],
+  );
 
   const setLevel = useCallback(
     (nextLevel: DetailLevel) => {
       if (!availableLevels.includes(nextLevel)) return;
       if (nextLevel !== "minimum") lastVisibleLevel.current = nextLevel;
+      else setDetailsOpen(false);
       setInternalLevel(nextLevel);
-      settings.onDetailLevelChange?.(nextLevel);
+      onDetailLevelChange?.(nextLevel);
     },
-    [availableLevels, settings],
+    [availableLevels, onDetailLevelChange, setDetailsOpen],
   );
 
+  const closeDetails = useCallback(
+    () => setDetailsOpen(false),
+    [setDetailsOpen],
+  );
+
+  const openDetails = useCallback(() => setDetailsOpen(true), [setDetailsOpen]);
+
   const toggleDetails = useCallback(() => {
-    setLevel(level === "minimum" ? lastVisibleLevel.current : "minimum");
-  }, [level, setLevel]);
+    if (detailsOpen) {
+      closeDetails();
+      return;
+    }
+
+    if (level === "minimum") setLevel(lastVisibleLevel.current);
+    openDetails();
+  }, [closeDetails, detailsOpen, level, openDetails, setLevel]);
+
+  useEffect(() => {
+    if (level !== "minimum") lastVisibleLevel.current = level;
+  }, [level]);
 
   const labels = useMemo(
     () => ({
@@ -91,7 +131,11 @@ export function PhotoDetailsProvider({ children }: PropsWithChildren) {
 
   const value = useMemo<PhotoDetailsContextValue>(
     () => ({
+      closeDetails,
+      detailsTriggerRef,
+      detailsOpen,
       level,
+      openDetails,
       setLevel,
       toggleDetails,
       settings,
@@ -99,7 +143,18 @@ export function PhotoDetailsProvider({ children }: PropsWithChildren) {
       labels,
       theme: settings.theme ?? "dark",
     }),
-    [availableLevels, labels, level, setLevel, settings, toggleDetails],
+    [
+      availableLevels,
+      closeDetails,
+      detailsTriggerRef,
+      detailsOpen,
+      labels,
+      level,
+      openDetails,
+      setLevel,
+      settings,
+      toggleDetails,
+    ],
   );
 
   return (

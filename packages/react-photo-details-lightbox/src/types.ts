@@ -249,6 +249,7 @@ export interface PhotoDetailsFormatters {
 export interface PhotoDetailsPanelRenderProps {
   level: DetailLevel;
   metadata?: PhotoMetadata;
+  onClose: () => void;
   slide?: Slide;
   sections: ResolvedDetailSection[];
   children: ReactNode;
@@ -267,6 +268,7 @@ export interface PhotoDetailsToolbarButtonRenderProps {
   level: DetailLevel;
   expanded: boolean;
   label: string;
+  buttonRef: ForwardedRef<HTMLButtonElement>;
   onClick: () => void;
 }
 
@@ -292,6 +294,19 @@ export interface PhotoDetailsSettings {
   detailLevel?: DetailLevel;
   defaultDetailLevel?: DetailLevel;
   onDetailLevelChange?: (level: DetailLevel) => void;
+  /**
+   * Control whether the photo-details drawer is open.
+   *
+   * When omitted, the drawer manages its own open state and starts closed.
+   */
+  detailsOpen?: boolean;
+  /**
+   * Initial open state for an uncontrolled photo-details drawer.
+   *
+   * @default false
+   */
+  defaultDetailsOpen?: boolean;
+  onDetailsOpenChange?: (open: boolean) => void;
   allowDetailLevelChange?: boolean;
   customSections?: DetailSection[];
   renderDetails?: PhotoDetailsRenderSlots;

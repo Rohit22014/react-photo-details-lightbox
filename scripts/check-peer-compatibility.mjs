@@ -124,6 +124,7 @@ const zoomRef: { current: PhotoDetailsZoomRef | null } = { current: null };
 const props: RootProps = {
   close() {},
   open: false,
+  detailsOpen: false,
   detailLabels: { detailed: "Technical" },
   lightboxLabels: {
     Close: "Dismiss",
@@ -145,6 +146,7 @@ const props: RootProps = {
     share: true,
     zoom: true,
   },
+  onDetailsOpenChange() {},
   zoom: { maxZoomPixelRatio: 2, ref: zoomRef },
 };
 const error = new ExifExtractionError("Example", {
@@ -295,10 +297,6 @@ await act(async () => {
   );
 });
 
-const collapseButton = document.querySelector(
-  '[aria-label="Collapse photo details"]',
-);
-const detailsBody = document.querySelector(".rpdl__body");
 const shareButton = document.querySelector('[aria-label="Share photo"]');
 const zoomInButton = document.querySelector('[aria-label="Zoom in"]');
 const zoomOutButton = document.querySelector('[aria-label="Zoom out"]');
@@ -306,14 +304,15 @@ const detailsMenuButton = document.querySelector(
   '[data-testid="photo-details-menu-button"]',
 );
 if (
-  !collapseButton ||
-  !detailsBody ||
   !shareButton ||
   !zoomInButton ||
   !zoomOutButton ||
   !detailsMenuButton
 ) {
-  throw new Error("The photo details panel did not mount in the DOM.");
+  throw new Error("The lightbox viewer actions did not mount in the DOM.");
+}
+if (document.querySelector('[data-testid="metadata-inspector"]')) {
+  throw new Error("The photo details panel should start closed.");
 }
 
 await act(async () => {
@@ -334,30 +333,29 @@ if (!detailsMenu || detailOptions.length !== 3) {
 }
 
 await act(async () => {
-  collapseButton.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+  detailOptions[2]?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 });
-if (
-  detailsBody.inert !== true ||
-  !detailsBody.hasAttribute("inert") ||
-  detailsBody.getAttribute("aria-hidden") !== "true" ||
-  detailsBody.getAttribute("tabindex") !== "-1"
-) {
-  throw new Error("Collapsed photo details are not inert in this React version.");
-}
-
-const expandButton = document.querySelector(
-  '[aria-label="Expand photo details"]',
+const detailsPanel = document.querySelector(
+  '[data-testid="metadata-inspector"]',
 );
-await act(async () => {
-  expandButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-});
+const detailsBody = document.querySelector(".rpdl__body");
+const closeDetailsButton = document.querySelector(
+  '[aria-label="Close photo details"]',
+);
 if (
-  detailsBody.inert !== false ||
-  detailsBody.hasAttribute("inert") ||
-  detailsBody.hasAttribute("aria-hidden") ||
+  !detailsPanel ||
+  !detailsBody ||
+  !closeDetailsButton ||
   detailsBody.getAttribute("tabindex") !== "0"
 ) {
-  throw new Error("Expanded photo details did not restore interaction.");
+  throw new Error("The three-dot menu did not open the photo details panel.");
+}
+
+await act(async () => {
+  closeDetailsButton.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+});
+if (document.querySelector('[data-testid="metadata-inspector"]')) {
+  throw new Error("The photo details close control did not hide the panel.");
 }
 
 await act(async () => root.unmount());

@@ -14,7 +14,7 @@ A photography-first metadata inspector for [Yet Another React Lightbox](https://
 ## Highlights
 
 - Four presentation levels: `minimum`, `information`, `detailed`, and `custom`
-- A responsive side inspector on desktop and bottom sheet on small screens
+- An on-demand right-side inspector on desktop and full-screen details view on phones
 - Built-in Share, Zoom, and three-dot detail-level controls in the wrapper
 - Dark, light, and system themes with CSS custom properties
 - A convenient `PhotoDetailsLightbox` wrapper and a composable `PhotoDetails` YARL plugin
@@ -162,6 +162,12 @@ All three viewer-action options default to `true`. When `toolbar.buttons` is
 not supplied, the wrapper orders the controls as Share, Zoom in/out, details,
 and Close.
 
+The inspector starts closed, independently of the selected detail level. Open
+the three-dot menu and choose Information, Detailed, or Custom to reveal it as
+a right-side drawer on desktop or a full-screen details view on phones.
+Choosing Minimum or the panel's close button hides it without discarding the
+last non-minimum selection.
+
 Set an individual action to `false`, or use `viewerActions={false}` to disable
 Share and automatic Zoom installation and return the details control to a
 simple show/hide toggle. A `Zoom` plugin supplied explicitly through `plugins`
@@ -238,7 +244,7 @@ control is the option that provides this package's copy-link fallback.
 | `detailed`    | Story, equipment, exposure, location, file, creator, and rights groups |
 | `custom`      | Only the sections and fields supplied through `customSections`         |
 
-The viewer can switch levels by default. Set `allowDetailLevelChange={false}` to lock the selected level.
+The viewer can switch levels by default. Set `allowDetailLevelChange={false}` to lock the selected level. `defaultDetailLevel` chooses the initial mode; it does not open the inspector.
 
 Use `defaultDetailLevel` for uncontrolled state:
 
@@ -269,6 +275,22 @@ const [detailLevel, setDetailLevel] = useState<DetailLevel>("detailed");
 ```
 
 An uncontrolled choice lasts only while the lightbox component remains mounted. The library does not write it to browser storage.
+
+The drawer can also be controlled explicitly with `detailsOpen` and
+`onDetailsOpenChange`, or initialized open with `defaultDetailsOpen`. The
+default is closed:
+
+```tsx
+const [detailsOpen, setDetailsOpen] = useState(false);
+
+<PhotoDetailsLightbox
+  open={open}
+  close={close}
+  slides={slides}
+  detailsOpen={detailsOpen}
+  onDetailsOpenChange={setDetailsOpen}
+/>;
+```
 
 ## Compose it as a YARL plugin
 
@@ -345,7 +367,13 @@ const customSections: DetailSection[] = [
 />;
 ```
 
-`DetailField` also supports `getValue`, `format`, and `hidden` for computed values, presentation overrides, and conditional visibility. `DetailSection` supports `hidden`. Use the `renderDetails` slots when an application needs to replace the panel, section, field, toolbar control, or empty presentation.
+`DetailField` also supports `getValue`, `format`, and `hidden` for computed
+values, presentation overrides, and conditional visibility. `DetailSection`
+supports `hidden`. Use the `renderDetails` slots when an application needs to
+replace the panel, section, field, toolbar control, or empty presentation. A
+custom panel receives `onClose`, and a custom toolbar control receives
+`buttonRef`; attach that ref to the actual trigger so focus returns correctly
+after the panel closes.
 
 ## Optional RGB histogram
 

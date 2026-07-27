@@ -37,6 +37,19 @@ const slides = [
   },
 ];
 
+const originalMatchMedia = window.matchMedia;
+
+async function openDetails(level = "Detailed") {
+  const trigger = await screen.findByTestId("photo-details-menu-button");
+  fireEvent.click(trigger);
+  fireEvent.click(
+    await screen.findByRole("menuitemradio", {
+      name: level,
+    }),
+  );
+  return screen.findByTestId("metadata-inspector");
+}
+
 afterEach(() => {
   for (const property of ["canShare", "clipboard", "share"] as const) {
     Object.defineProperty(window.navigator, property, {
@@ -44,10 +57,14 @@ afterEach(() => {
       value: undefined,
     });
   }
+  Object.defineProperty(window, "matchMedia", {
+    configurable: true,
+    value: originalMatchMedia,
+  });
 });
 
 describe("PhotoDetailsLightbox", () => {
-  it("mounts its inspector with Share, Zoom, detail menu, and Close controls", async () => {
+  it("starts with details closed and opens them through the three-dot menu", async () => {
     render(
       <PhotoDetailsLightbox
         open
@@ -57,15 +74,7 @@ describe("PhotoDetailsLightbox", () => {
       />,
     );
 
-    expect(await screen.findByTestId("metadata-inspector")).toHaveTextContent(
-      "Ridge light",
-    );
-    expect(screen.getByTestId("metadata-inspector")).toHaveTextContent(
-      "Leica SL2-S",
-    );
-    expect(
-      screen.getByRole("region", { name: "Photo metadata" }),
-    ).toHaveAttribute("tabindex", "0");
+    expect(screen.queryByTestId("metadata-inspector")).not.toBeInTheDocument();
     const toolbar = document.querySelector(".yarl__toolbar");
     expect(toolbar).not.toBeNull();
     expect(
@@ -87,12 +96,19 @@ describe("PhotoDetailsLightbox", () => {
     expect(
       within(toolbar as HTMLElement).getByRole("button", { name: "Close" }),
     ).toBeInTheDocument();
+
+    const inspector = await openDetails();
+    expect(inspector).toHaveTextContent("Ridge light");
+    expect(inspector).toHaveTextContent("Leica SL2-S");
+    expect(
+      screen.getByRole("region", { name: "Photo metadata" }),
+    ).toHaveAttribute("tabindex", "0");
     expect(
       screen.queryByRole("figure", { name: "RGB histogram" }),
     ).not.toBeInTheDocument();
   });
 
-  it("lets the viewer hide and restore the details", async () => {
+  it("lets the viewer close and restore the selected details", async () => {
     render(
       <PhotoDetailsLightbox
         open
@@ -102,19 +118,205 @@ describe("PhotoDetailsLightbox", () => {
       />,
     );
 
-    const selector = await screen.findByTestId("photo-detail-level-select");
-    fireEvent.change(selector, { target: { value: "minimum" } });
-
-    await waitFor(() =>
-      expect(
-        screen.queryByTestId("metadata-inspector"),
-      ).not.toBeInTheDocument(),
+    fireEvent.click(await screen.findByTestId("photo-details-menu-button"));
+    fireEvent.click(
+      await screen.findByRole("menuitemradio", { name: "Information" }),
     );
+    const closeDetails = screen.getByRole("button", {
+      name: "Close photo details",
+    });
+    fireEvent.click(closeDetails);
 
     const menuButton = screen.getByTestId("photo-details-menu-button");
+    await waitFor(() => expect(menuButton).toHaveFocus());
+    expect(screen.queryByTestId("metadata-inspector")).not.toBeInTheDocument();
     fireEvent.click(menuButton);
     fireEvent.click(screen.getByRole("menuitemradio", { name: "Information" }));
     expect(await screen.findByTestId("metadata-inspector")).toBeInTheDocument();
+  });
+
+  it("supports controlled details visibility", async () => {
+    const onDetailsOpenChange = vi.fn();
+    const { rerender } = render(
+      <PhotoDetailsLightbox
+        open
+        close={vi.fn()}
+        detailsOpen={false}
+        onDetailsOpenChange={onDetailsOpenChange}
+        slides={slides}
+        defaultDetailLevel="information"
+      />,
+    );
+
+    fireEvent.click(await screen.findByTestId("photo-details-menu-button"));
+    fireEvent.click(
+      await screen.findByRole("menuitemradio", { name: "Information" }),
+    );
+    expect(onDetailsOpenChange).toHaveBeenLastCalledWith(true);
+    expect(screen.queryByTestId("metadata-inspector")).not.toBeInTheDocument();
+
+    rerender(
+      <PhotoDetailsLightbox
+        open
+        close={vi.fn()}
+        detailsOpen
+        onDetailsOpenChange={onDetailsOpenChange}
+        slides={slides}
+        defaultDetailLevel="information"
+      />,
+    );
+    expect(await screen.findByTestId("metadata-inspector")).toBeInTheDocument();
+
+    const panelClose = screen.getByRole("button", {
+      name: "Close photo details",
+    });
+    fireEvent.click(panelClose);
+    expect(onDetailsOpenChange).toHaveBeenLastCalledWith(false);
+    expect(screen.getByTestId("metadata-inspector")).toBeInTheDocument();
+    await waitFor(() => expect(panelClose).toHaveFocus());
+
+    rerender(
+      <PhotoDetailsLightbox
+        open
+        close={vi.fn()}
+        detailsOpen={false}
+        onDetailsOpenChange={onDetailsOpenChange}
+        slides={slides}
+        defaultDetailLevel="information"
+      />,
+    );
+    expect(screen.queryByTestId("metadata-inspector")).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByTestId("photo-details-menu-button")).toHaveFocus(),
+    );
+  });
+
+  it("requests a controlled close when Minimum is selected", async () => {
+    const onDetailLevelChange = vi.fn();
+    const onDetailsOpenChange = vi.fn();
+    const { rerender } = render(
+      <PhotoDetailsLightbox
+        open
+        close={vi.fn()}
+        detailLevel="detailed"
+        detailsOpen
+        onDetailLevelChange={onDetailLevelChange}
+        onDetailsOpenChange={onDetailsOpenChange}
+        slides={slides}
+      />,
+    );
+
+    const selector = await screen.findByTestId("photo-detail-level-select");
+    selector.focus();
+    fireEvent.change(selector, { target: { value: "minimum" } });
+    expect(onDetailLevelChange).toHaveBeenLastCalledWith("minimum");
+    expect(onDetailsOpenChange).toHaveBeenLastCalledWith(false);
+    expect(screen.getByTestId("metadata-inspector")).toBeInTheDocument();
+    expect(selector).toHaveFocus();
+
+    rerender(
+      <PhotoDetailsLightbox
+        open
+        close={vi.fn()}
+        detailLevel="minimum"
+        detailsOpen={false}
+        onDetailLevelChange={onDetailLevelChange}
+        onDetailsOpenChange={onDetailsOpenChange}
+        slides={slides}
+      />,
+    );
+    expect(screen.queryByTestId("metadata-inspector")).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByTestId("photo-details-menu-button")).toHaveFocus(),
+    );
+  });
+
+  it("does not repeat controlled visibility callbacks for the current state", async () => {
+    const onDetailsOpenChange = vi.fn();
+    render(
+      <PhotoDetailsLightbox
+        open
+        close={vi.fn()}
+        detailsOpen
+        onDetailsOpenChange={onDetailsOpenChange}
+        slides={slides}
+        defaultDetailLevel="detailed"
+      />,
+    );
+
+    fireEvent.click(await screen.findByTestId("photo-details-menu-button"));
+    fireEvent.click(
+      await screen.findByRole("menuitemradio", { name: "Detailed" }),
+    );
+
+    expect(onDetailsOpenChange).not.toHaveBeenCalled();
+    expect(screen.getByTestId("metadata-inspector")).toBeInTheDocument();
+  });
+
+  it("restores the latest externally controlled non-minimum level", async () => {
+    const onDetailLevelChange = vi.fn();
+    const onDetailsOpenChange = vi.fn();
+    const { rerender } = render(
+      <PhotoDetailsLightbox
+        open
+        close={vi.fn()}
+        allowDetailLevelChange={false}
+        detailLevel="detailed"
+        detailsOpen={false}
+        onDetailLevelChange={onDetailLevelChange}
+        onDetailsOpenChange={onDetailsOpenChange}
+        slides={slides}
+      />,
+    );
+
+    rerender(
+      <PhotoDetailsLightbox
+        open
+        close={vi.fn()}
+        allowDetailLevelChange={false}
+        detailLevel="minimum"
+        detailsOpen={false}
+        onDetailLevelChange={onDetailLevelChange}
+        onDetailsOpenChange={onDetailsOpenChange}
+        slides={slides}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Photo details" }));
+
+    expect(onDetailLevelChange).toHaveBeenLastCalledWith("detailed");
+    expect(onDetailsOpenChange).toHaveBeenLastCalledWith(true);
+  });
+
+  it("starts closed again when the lightbox is reopened", async () => {
+    const close = vi.fn();
+    const { rerender } = render(
+      <PhotoDetailsLightbox
+        open
+        close={close}
+        slides={slides}
+        defaultDetailLevel="detailed"
+      />,
+    );
+
+    await openDetails();
+    rerender(
+      <PhotoDetailsLightbox
+        open={false}
+        close={close}
+        slides={slides}
+        defaultDetailLevel="detailed"
+      />,
+    );
+    rerender(
+      <PhotoDetailsLightbox
+        open
+        close={close}
+        slides={slides}
+        defaultDetailLevel="detailed"
+      />,
+    );
+
+    expect(screen.queryByTestId("metadata-inspector")).not.toBeInTheDocument();
   });
 
   it("supports keyboard and pointer interaction in the detail-level menu", async () => {
@@ -167,9 +369,7 @@ describe("PhotoDetailsLightbox", () => {
     fireEvent.keyDown(detailed, { key: "ArrowRight" });
     expect(screen.getByRole("menu")).toBeInTheDocument();
     expect(detailed).toHaveFocus();
-    expect(screen.getByTestId("metadata-inspector")).toHaveTextContent(
-      "Ridge light",
-    );
+    expect(screen.queryByTestId("metadata-inspector")).not.toBeInTheDocument();
 
     fireEvent.keyDown(detailed, { key: "ArrowDown" });
     expect(custom).toHaveFocus();
@@ -209,7 +409,14 @@ describe("PhotoDetailsLightbox", () => {
       "Custom notes",
     );
     expect(screen.queryByRole("menu")).not.toBeInTheDocument();
-    expect(trigger).toHaveFocus();
+    expect(
+      screen.getByRole("button", { name: "Close photo details" }),
+    ).toBeInTheDocument();
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Close photo details" }),
+      ).toHaveFocus(),
+    );
 
     fireEvent.click(trigger);
     fireEvent.keyDown(screen.getByRole("menuitemradio", { name: "Custom" }), {
@@ -298,15 +505,15 @@ describe("PhotoDetailsLightbox", () => {
     );
 
     const toggle = await screen.findByRole("button", {
-      name: "Hide metadata",
+      name: "Show metadata",
     });
     expect(
       screen.queryByTestId("photo-details-menu-button"),
     ).not.toBeInTheDocument();
     fireEvent.click(toggle);
-    expect(screen.queryByTestId("metadata-inspector")).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Show metadata" }));
     expect(await screen.findByTestId("metadata-inspector")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Hide metadata" }));
+    expect(screen.queryByTestId("metadata-inspector")).not.toBeInTheDocument();
   });
 
   it("shares through the native sheet and falls back to copying a link", async () => {
@@ -499,32 +706,182 @@ describe("PhotoDetailsLightbox", () => {
     );
   });
 
-  it("removes collapsed mobile details from focus and the accessibility tree", async () => {
+  it("closes details before the lightbox on Escape and restores toolbar focus", async () => {
+    const close = vi.fn();
     render(
       <PhotoDetailsLightbox
         open
-        close={vi.fn()}
+        close={close}
         slides={[{ ...slides[0]!, photoHistogram }]}
         defaultDetailLevel="detailed"
         histogram
       />,
     );
 
-    const body = await screen.findByRole("region", { name: "Photo metadata" });
-    fireEvent.click(
-      screen.getByRole("button", { name: "Collapse photo details" }),
+    expect(screen.queryByTestId("metadata-inspector")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("figure", { name: "RGB histogram" }),
+    ).not.toBeInTheDocument();
+    await openDetails();
+    const panelClose = screen.getByRole("button", {
+      name: "Close photo details",
+    });
+    await waitFor(() => expect(panelClose).toHaveFocus());
+    fireEvent.keyDown(panelClose, { key: "Escape" });
+
+    await waitFor(() =>
+      expect(
+        screen.queryByTestId("metadata-inspector"),
+      ).not.toBeInTheDocument(),
+    );
+    expect(close).not.toHaveBeenCalled();
+    await waitFor(() =>
+      expect(screen.getByTestId("photo-details-menu-button")).toHaveFocus(),
+    );
+  });
+
+  it("lets a nested details control consume Escape first", async () => {
+    const nestedEscape = vi.fn();
+    render(
+      <PhotoDetailsLightbox
+        open
+        close={vi.fn()}
+        slides={[{ src: "/empty.jpg" }]}
+        defaultDetailLevel="information"
+        renderDetails={{
+          empty: () => (
+            <button
+              type="button"
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  nestedEscape();
+                }
+              }}
+            >
+              Nested control
+            </button>
+          ),
+        }}
+      />,
     );
 
-    expect(body).toHaveAttribute("inert");
-    expect(body).toHaveAttribute("aria-hidden", "true");
-    expect(body).toHaveAttribute("tabindex", "-1");
+    await openDetails("Information");
+    const nested = screen.getByRole("button", { name: "Nested control" });
+    nested.focus();
+    fireEvent.keyDown(nested, { key: "Escape" });
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "Expand photo details" }),
+    expect(nestedEscape).toHaveBeenCalledOnce();
+    expect(screen.getByTestId("metadata-inspector")).toBeInTheDocument();
+  });
+
+  it("exposes close and trigger refs to custom panel controls", async () => {
+    const panelSlot = vi.fn(
+      ({
+        children,
+        onClose,
+      }: {
+        children: React.ReactNode;
+        onClose: () => void;
+      }) => (
+        <div data-testid="custom-panel">
+          {children}
+          <button type="button" onClick={onClose}>
+            Custom close
+          </button>
+        </div>
+      ),
     );
-    expect(body).not.toHaveAttribute("inert");
-    expect(body).not.toHaveAttribute("aria-hidden");
-    expect(body).toHaveAttribute("tabindex", "0");
+    const toolbarSlot = vi.fn(
+      ({
+        buttonRef,
+        label,
+        onClick,
+      }: {
+        buttonRef: React.ForwardedRef<HTMLButtonElement>;
+        label: string;
+        onClick: () => void;
+      }) => (
+        <button ref={buttonRef} type="button" onClick={onClick}>
+          {label}
+        </button>
+      ),
+    );
+
+    render(
+      <PhotoDetailsLightbox
+        open
+        close={vi.fn()}
+        slides={slides}
+        defaultDetailLevel="information"
+        renderDetails={{
+          panel: panelSlot,
+          toolbarButton: toolbarSlot,
+        }}
+      />,
+    );
+
+    const trigger = await screen.findByRole("button", {
+      name: "Photo details",
+    });
+    fireEvent.click(trigger);
+    expect(await screen.findByTestId("custom-panel")).toBeInTheDocument();
+    expect(panelSlot).toHaveBeenCalledWith(
+      expect.objectContaining({ onClose: expect.any(Function) }),
+    );
+    expect(toolbarSlot).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        buttonRef: expect.objectContaining({ current: trigger }),
+      }),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Custom close" }));
+    expect(screen.queryByTestId("metadata-inspector")).not.toBeInTheDocument();
+    await waitFor(() => expect(trigger).toHaveFocus());
+  });
+
+  it("isolates the lightbox background around a custom panel wrapper on mobile", async () => {
+    Object.defineProperty(window, "matchMedia", {
+      configurable: true,
+      value: vi.fn().mockReturnValue({
+        addEventListener: vi.fn(),
+        matches: true,
+        removeEventListener: vi.fn(),
+      }),
+    });
+
+    render(
+      <PhotoDetailsLightbox
+        open
+        close={vi.fn()}
+        slides={slides}
+        defaultDetailLevel="information"
+        renderDetails={{
+          panel: ({ children, onClose }) => (
+            <div data-testid="custom-panel-wrapper">
+              {children}
+              <button type="button" onClick={onClose}>
+                Custom close
+              </button>
+            </div>
+          ),
+        }}
+      />,
+    );
+
+    await openDetails("Information");
+    const wrapper = screen.getByTestId("custom-panel-wrapper");
+    const customClose = screen.getByRole("button", { name: "Custom close" });
+    const toolbar = document.querySelector(".yarl__toolbar");
+    const carousel = document.querySelector(".yarl__carousel");
+
+    expect(wrapper).not.toHaveAttribute("inert");
+    expect(customClose).not.toHaveAttribute("inert");
+    expect(toolbar).toHaveAttribute("inert");
+    expect(toolbar).toHaveAttribute("aria-hidden", "true");
+    expect(carousel).toHaveAttribute("inert");
+    expect(carousel).toHaveAttribute("aria-hidden", "true");
   });
 
   it("renders supplied histogram data only after an application opts in", async () => {
@@ -538,6 +895,7 @@ describe("PhotoDetailsLightbox", () => {
       />,
     );
 
+    await openDetails();
     expect(
       await screen.findByRole("figure", { name: "RGB histogram" }),
     ).toBeInTheDocument();
@@ -560,7 +918,7 @@ describe("PhotoDetailsLightbox", () => {
       />,
     );
 
-    expect(await screen.findByTestId("metadata-inspector")).toBeInTheDocument();
+    await openDetails("Information");
     expect(
       screen.queryByRole("figure", { name: "RGB histogram" }),
     ).not.toBeInTheDocument();
@@ -584,6 +942,8 @@ describe("PhotoDetailsLightbox", () => {
       />,
     );
 
+    expect(histogramSlot).not.toHaveBeenCalled();
+    await openDetails();
     expect(await screen.findByTestId("custom-histogram")).toBeInTheDocument();
     expect(histogramSlot).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -606,6 +966,7 @@ describe("PhotoDetailsLightbox", () => {
       />,
     );
 
+    await openDetails();
     expect(
       await screen.findAllByText("Histogram unavailable for this image."),
     ).toHaveLength(2);

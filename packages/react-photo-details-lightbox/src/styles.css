@@ -57,10 +57,6 @@
   --rpdl-shadow: -22px 0 70px rgb(0 0 0 / 18%);
 }
 
-.rpdl__sheet-handle {
-  display: none;
-}
-
 .rpdl__header {
   display: flex;
   min-height: 74px;
@@ -72,9 +68,16 @@
   border-bottom: 1px solid var(--rpdl-border);
 }
 
-.rpdl__header > div {
+.rpdl__header > div:first-child {
   display: grid;
   gap: 4px;
+}
+
+.rpdl__header-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
 }
 
 .rpdl__header strong {
@@ -99,7 +102,8 @@
 .rpdl__level-label {
   box-sizing: border-box;
   height: 34px;
-  padding: 0 28px 0 11px;
+  padding-block: 0;
+  padding-inline: 11px 28px;
   color: var(--rpdl-text);
   background: var(--rpdl-bg-elevated);
   border: 1px solid var(--rpdl-border);
@@ -121,9 +125,36 @@
 }
 
 .rpdl__level select:focus-visible,
-.rpdl__sheet-handle:focus-visible {
+.rpdl__panel-close:focus-visible {
   outline: 2px solid var(--rpdl-accent);
   outline-offset: 3px;
+}
+
+.rpdl__panel-close {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 0;
+  color: var(--rpdl-text);
+  background: var(--rpdl-bg-elevated);
+  border: 1px solid var(--rpdl-border);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.rpdl__panel-close:hover {
+  background: color-mix(in srgb, var(--rpdl-text) 12%, var(--rpdl-bg-elevated));
+}
+
+.rpdl__panel-close svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-width: 1.75;
 }
 
 .rpdl__body {
@@ -587,11 +618,6 @@
   box-shadow: 22px 0 70px rgb(0 0 0 / 32%);
 }
 
-[dir="rtl"] .rpdl__details-menu,
-[dir="rtl"] .rpdl__action-feedback {
-  inset-inline: 0 auto;
-}
-
 @media (min-width: 768px) {
   .rpdl--details-open {
     inset-inline-end: var(--rpdl-panel-width);
@@ -636,61 +662,45 @@
 
 @media (max-width: 767px) {
   .rpdl__panel {
-    inset: auto 0 0;
+    position: fixed;
+    z-index: 5;
+    inset: 0;
     width: 100%;
-    max-height: min(72dvh, 620px);
-    border: 1px solid var(--rpdl-border);
-    border-radius: var(--rpdl-radius) var(--rpdl-radius) 0 0;
-    box-shadow: 0 -24px 70px rgb(0 0 0 / 38%);
-    transition:
-      max-height var(--rpdl-transition),
-      transform var(--rpdl-transition);
+    height: 100vh;
+    height: 100dvh;
+    max-height: none;
+    padding-bottom: env(safe-area-inset-bottom);
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
   }
 
   [dir="rtl"] .rpdl__panel {
-    inset: auto 0 0;
-    border-inline: 1px solid var(--rpdl-border);
-  }
-
-  .rpdl__panel--collapsed {
-    max-height: 112px;
-  }
-
-  .rpdl__sheet-handle {
-    display: grid;
-    width: 100%;
-    height: 28px;
-    flex: 0 0 auto;
-    place-items: center;
-    padding: 0;
-    touch-action: none;
-    color: inherit;
-    background: transparent;
+    inset: 0;
     border: 0;
-    cursor: ns-resize;
-  }
-
-  .rpdl__sheet-handle span {
-    width: 42px;
-    height: 4px;
-    background: var(--rpdl-muted);
-    border-radius: 999px;
-    opacity: 0.55;
   }
 
   .rpdl__header {
-    min-height: 68px;
+    display: grid;
+    min-height: 72px;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    padding: 6px 18px 14px;
+    padding: calc(14px + env(safe-area-inset-top))
+      max(16px, env(safe-area-inset-right)) 14px
+      max(16px, env(safe-area-inset-left));
   }
 
-  .rpdl__body {
-    transition: opacity var(--rpdl-transition);
+  .rpdl__header-actions {
+    gap: 7px;
   }
 
-  .rpdl__panel--collapsed .rpdl__body {
-    pointer-events: none;
-    opacity: 0;
+  .rpdl__level select {
+    max-width: 104px;
+  }
+
+  .rpdl__panel-close {
+    width: 44px;
+    height: 44px;
   }
 
   .rpdl__intro {
@@ -717,10 +727,6 @@
 
   .rpdl__sections {
     padding-inline: 20px;
-  }
-
-  .rpdl--details-open .yarl__slide {
-    padding-bottom: calc(var(--yarl__carousel_padding_px, 0) * 1px + 92px);
   }
 }
 

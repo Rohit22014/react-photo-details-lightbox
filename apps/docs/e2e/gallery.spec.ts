@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 interface RecordedShareData {
   text?: string;
@@ -20,6 +20,18 @@ const histogramFixture = `
     <rect width="256" height="256" fill="url(#tones)" />
   </svg>
 `;
+
+async function openPhotoDetails(page: Page, level = "Detailed") {
+  await page.getByTestId("photo-details-menu-button").click();
+  const menu = page.getByRole("menu", {
+    name: "Choose photo detail level",
+  });
+  await expect(menu).toBeVisible();
+  await menu.getByRole("menuitemradio", { name: level }).click();
+  const inspector = page.getByTestId("metadata-inspector");
+  await expect(inspector).toBeVisible();
+  return inspector;
+}
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
@@ -104,17 +116,18 @@ test("opens a photograph and closes the lightbox", async ({ page }) => {
       "Choose photo detail level",
       "Close",
     ]);
-  await expect(page.getByTestId("metadata-inspector")).toBeVisible();
-  await expect(page.getByTestId("metadata-inspector")).toContainText(
-    "Light Across the Ridge",
-  );
-  await expect(page.getByTestId("metadata-inspector")).toContainText("Leica");
+  await expect(page.getByTestId("metadata-inspector")).toBeHidden();
+  const inspector = await openPhotoDetails(page);
+  await expect(inspector).toContainText("Light Across the Ridge");
+  await expect(inspector).toContainText("Leica");
   await page
     .getByTestId("photo-detail-level-select")
     .selectOption("information");
   await expect(page.getByTestId("demo-detail-level-select")).toHaveValue(
     "information",
   );
+  await page.getByRole("button", { name: "Close photo details" }).click();
+  await expect(inspector).toBeHidden();
 
   await closeButton.click();
 
@@ -126,21 +139,31 @@ test("open lightbox has no serious or critical accessibility violations", async 
   page,
 }) => {
   await page.getByTestId("gallery-card-0").click();
-  await expect(page.getByTestId("metadata-inspector")).toBeVisible();
-  await expect(page.getByTestId("rgb-histogram-graph")).toBeVisible();
   await page.getByTestId("photo-details-menu-button").click();
-  await expect(
-    page.getByRole("menu", { name: "Choose photo detail level" }),
-  ).toBeVisible();
+  const menu = page.getByRole("menu", {
+    name: "Choose photo detail level",
+  });
+  await expect(menu).toBeVisible();
 
-  const results = await new AxeBuilder({ page })
+  const menuResults = await new AxeBuilder({ page })
     .include(".yarl__portal")
     .analyze();
-  const violations = results.violations.filter(
+  const menuViolations = menuResults.violations.filter(
     ({ impact }) => impact === "serious" || impact === "critical",
   );
+  expect(menuViolations, JSON.stringify(menuViolations, null, 2)).toEqual([]);
 
-  expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
+  await menu.getByRole("menuitemradio", { name: "Detailed" }).click();
+  await expect(page.getByTestId("metadata-inspector")).toBeVisible();
+  await expect(page.getByTestId("rgb-histogram-graph")).toBeVisible();
+
+  const panelResults = await new AxeBuilder({ page })
+    .include(".yarl__portal")
+    .analyze();
+  const panelViolations = panelResults.violations.filter(
+    ({ impact }) => impact === "serious" || impact === "critical",
+  );
+  expect(panelViolations, JSON.stringify(panelViolations, null, 2)).toEqual([]);
 });
 
 test("shares the active photograph through the Web Share API", async ({
@@ -178,6 +201,7 @@ test("supports keyboard interaction in the photo detail menu", async ({
   await page.getByTestId("gallery-card-0").click();
 
   const trigger = page.getByTestId("photo-details-menu-button");
+  await expect(trigger).toHaveAccessibleName("Choose photo detail level");
   await trigger.focus();
   await trigger.press("Enter");
   await expect(trigger).toHaveAttribute("aria-expanded", "true");
@@ -195,8 +219,9 @@ test("supports keyboard interaction in the photo detail menu", async ({
   await expect(custom).toBeFocused();
   await custom.press("Enter");
   await expect(menu).toBeHidden();
-  await expect(trigger).toBeFocused();
-  await expect(trigger).toHaveAccessibleName("Choose photo detail level");
+  await expect(
+    page.getByRole("button", { name: "Close photo details" }),
+  ).toBeFocused();
   await expect(trigger).toHaveAttribute("aria-expanded", "false");
   await expect(page.getByTestId("metadata-inspector")).toContainText(
     "From the field",
@@ -204,6 +229,12 @@ test("supports keyboard interaction in the photo detail menu", async ({
   await expect(page.getByTestId("demo-detail-level-select")).toHaveValue(
     "custom",
   );
+
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("metadata-inspector")).toBeHidden();
+  await expect(trigger).toBeFocused();
+  await expect(trigger).toHaveAccessibleName("Choose photo detail level");
+  await expect(page.getByRole("button", { name: "Close" })).toBeVisible();
 
   await trigger.press("Enter");
   await expect(menu).toBeVisible();
@@ -259,6 +290,7 @@ test("shows an accessible RGB histogram only in detailed mode", async ({
   page,
 }) => {
   await page.getByTestId("gallery-card-0").click();
+  await openPhotoDetails(page);
 
   await expect(
     page.getByRole("heading", { name: "RGB histogram" }),
@@ -294,6 +326,7 @@ test("renders stable dark, light, desktop, and mobile histograms", async ({
   page,
 }, testInfo) => {
   await page.getByTestId("gallery-card-0").click();
+  await openPhotoDetails(page);
 
   const inspector = page.getByTestId("metadata-inspector");
   const histogram = page.getByRole("figure", { name: "RGB histogram" });
@@ -322,7 +355,10 @@ test("switches between minimum, information, detailed, and custom modes", async 
 
   await level.selectOption("detailed");
   await photograph.click();
+  await expect(inspector).toBeHidden();
+  await openPhotoDetails(page);
   await expect(inspector).toBeVisible();
+  await page.getByRole("button", { name: "Close photo details" }).click();
   await closeButton.click();
 
   await level.selectOption("minimum");
@@ -332,43 +368,127 @@ test("switches between minimum, information, detailed, and custom modes", async 
 
   await level.selectOption("information");
   await photograph.click();
+  await openPhotoDetails(page, "Information");
   await expect(inspector).toBeVisible();
   await expect(inspector).toContainText("Light Across the Ridge");
+  await page.getByRole("button", { name: "Close photo details" }).click();
   await closeButton.click();
 
   await level.selectOption("detailed");
   await photograph.click();
+  await openPhotoDetails(page);
   await expect(inspector).toBeVisible();
+  await page.getByRole("button", { name: "Close photo details" }).click();
   await closeButton.click();
 
   await level.selectOption("custom");
   await expect(level).toHaveValue("custom");
   await photograph.click();
+  await openPhotoDetails(page, "Custom");
   await expect(inspector).toBeVisible();
   await expect(inspector).toContainText("From the field");
 });
 
-test("expands and collapses the mobile details sheet", async ({
+test("uses a full-screen photo details view on mobile", async ({
   page,
 }, testInfo) => {
   test.skip(!testInfo.project.name.includes("mobile"));
 
   await page.getByTestId("gallery-card-0").click();
-  const inspector = page.getByTestId("metadata-inspector");
-  const body = inspector.locator(".rpdl__body");
-  await expect(inspector).toHaveClass(/rpdl__panel--expanded/);
+  await expect(page.getByTestId("metadata-inspector")).toBeHidden();
+  const inspector = await openPhotoDetails(page);
+  await expect(inspector).toHaveAttribute("aria-modal", "true");
+  await expect(inspector).toHaveCSS("position", "fixed");
 
-  await page.getByRole("button", { name: "Collapse photo details" }).click();
-  await expect(inspector).toHaveClass(/rpdl__panel--collapsed/);
-  await expect(body).toHaveAttribute("inert", "");
-  await expect(body).toHaveAttribute("aria-hidden", "true");
-  await expect(body).toHaveAttribute("tabindex", "-1");
+  const viewport = page.viewportSize();
+  const panelBox = await inspector.boundingBox();
+  expect(viewport).not.toBeNull();
+  expect(panelBox).not.toBeNull();
+  expect(panelBox?.x ?? -1).toBeCloseTo(0, 0);
+  expect(panelBox?.y ?? -1).toBeCloseTo(0, 0);
+  expect(panelBox?.width ?? 0).toBeCloseTo(viewport?.width ?? 0, 0);
+  expect(panelBox?.height ?? 0).toBeCloseTo(viewport?.height ?? 0, 0);
+  const panelClose = page.getByRole("button", {
+    name: "Close photo details",
+  });
+  await expect(panelClose).toBeVisible();
 
-  await page.getByRole("button", { name: "Expand photo details" }).click();
-  await expect(inspector).toHaveClass(/rpdl__panel--expanded/);
-  await expect(body).not.toHaveAttribute("inert");
-  await expect(body).not.toHaveAttribute("aria-hidden");
-  await expect(body).toHaveAttribute("tabindex", "0");
+  const toolbar = page.locator(".yarl__toolbar");
+  const carousel = page.locator(".yarl__carousel");
+  await expect(toolbar).toHaveAttribute("inert", "");
+  await expect(toolbar).toHaveAttribute("aria-hidden", "true");
+  await expect(carousel).toHaveAttribute("inert", "");
+  await expect(carousel).toHaveAttribute("aria-hidden", "true");
+
+  const backgroundAcceptedFocus = await page
+    .getByRole("button", {
+      name: "Close",
+      exact: true,
+      includeHidden: true,
+    })
+    .evaluate((element) => {
+      (element as HTMLButtonElement).focus();
+      return element.ownerDocument.activeElement === element;
+    });
+  expect(backgroundAcceptedFocus).toBe(false);
+
+  const detailLevel = page.getByTestId("photo-detail-level-select");
+  const blueChannel = page.getByRole("button", { name: "Blue channel" });
+  await blueChannel.focus();
+  await blueChannel.press("Tab");
+  await expect(detailLevel).toBeFocused();
+  await detailLevel.press("Shift+Tab");
+  await expect(blueChannel).toBeFocused();
+
+  await panelClose.click();
+  await expect(inspector).toBeHidden();
+  await expect(toolbar).not.toHaveAttribute("inert", "");
+  await expect(toolbar).not.toHaveAttribute("aria-hidden", "true");
+  await expect(carousel).not.toHaveAttribute("inert", "");
+  await expect(carousel).not.toHaveAttribute("aria-hidden", "true");
+});
+
+test("opens the desktop photo details drawer against the right edge", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name.includes("mobile"));
+
+  await page.getByTestId("gallery-card-0").click();
+  const inspector = await openPhotoDetails(page);
+  const viewport = page.viewportSize();
+  const panelBox = await inspector.boundingBox();
+  expect(viewport).not.toBeNull();
+  expect(panelBox).not.toBeNull();
+  expect(panelBox?.x ?? 0).toBeGreaterThan(0);
+  expect((panelBox?.x ?? 0) + (panelBox?.width ?? 0)).toBeCloseTo(
+    viewport?.width ?? 0,
+    0,
+  );
+});
+
+test("keeps the three-dot menu inside an RTL desktop viewport", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name.includes("mobile"));
+
+  await page.getByTestId("gallery-card-0").click();
+  await page.locator(".yarl__portal").evaluate((element) => {
+    element.setAttribute("dir", "rtl");
+  });
+  await page.getByTestId("photo-details-menu-button").click();
+
+  const menu = page.getByRole("menu", {
+    name: "Choose photo detail level",
+  });
+  await expect(menu).toBeVisible();
+  const viewport = page.viewportSize();
+  const menuBox = await menu.boundingBox();
+  expect(viewport).not.toBeNull();
+  expect(menuBox).not.toBeNull();
+  expect(menuBox?.x ?? -1).toBeGreaterThanOrEqual(0);
+  expect((menuBox?.x ?? 0) + (menuBox?.width ?? 0)).toBeLessThanOrEqual(
+    viewport?.width ?? 0,
+  );
 });
 
 test("keeps mobile toolbar actions and the detail menu within reach", async ({

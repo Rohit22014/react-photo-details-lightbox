@@ -38,7 +38,7 @@ const features = [
   {
     number: "03",
     title: "From quiet to comprehensive",
-    body: "Share, zoom and move between minimum, information, detailed and custom views without leaving the photograph.",
+    body: "Share and zoom freely, then open the on-demand details drawer only when you want information, detailed or custom context.",
   },
 ];
 
@@ -158,7 +158,7 @@ export default function HomePage() {
             <h2>Look closer.</h2>
           </div>
           <p>
-            Open any frame, then share, zoom or use the three-dot menu to choose
+            Open any frame, then share, zoom or use the three-dot menu to open
             exactly how much photographic context you want to see.
           </p>
         </div>

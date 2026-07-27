@@ -253,8 +253,16 @@ function focusOption(
 
 function DefaultDetailsMenu() {
   const { currentIndex } = useLightboxState();
-  const { availableLevels, labels, level, setLevel, settings } =
-    usePhotoDetails();
+  const {
+    availableLevels,
+    detailsTriggerRef,
+    detailsOpen,
+    labels,
+    level,
+    openDetails,
+    setLevel,
+    settings,
+  } = usePhotoDetails();
   const actions = resolveViewerActions(settings.viewerActions);
   const [menuState, setMenuState] = useState({
     index: currentIndex,
@@ -262,7 +270,8 @@ function DefaultDetailsMenu() {
   });
   const [focusedLevel, setFocusedLevel] = useState<DetailLevel>(level);
   const open = menuState.open && menuState.index === currentIndex;
-  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelVisible = detailsOpen && level !== "minimum";
+  const triggerRef = detailsTriggerRef;
   const menuRef = useRef<HTMLDivElement>(null);
   const optionRefs = useRef(new Map<DetailLevel, HTMLButtonElement>());
   const generatedId = useId();
@@ -290,7 +299,7 @@ function DefaultDetailsMenu() {
     ownerDocument.addEventListener("pointerdown", onPointerDown, true);
     return () =>
       ownerDocument.removeEventListener("pointerdown", onPointerDown, true);
-  }, [currentIndex, focusedLevel, open]);
+  }, [currentIndex, focusedLevel, open, triggerRef]);
 
   const closeMenu = (restoreFocus: boolean) => {
     setMenuState({ index: currentIndex, open: false });
@@ -373,7 +382,10 @@ function DefaultDetailsMenu() {
         aria-controls={open ? menuId : undefined}
         aria-expanded={open}
         aria-haspopup="menu"
-        className={open ? "rpdl__toolbar-button--active" : undefined}
+        className={
+          open || panelVisible ? "rpdl__toolbar-button--active" : undefined
+        }
+        data-details-open={panelVisible}
         data-testid="photo-details-menu-button"
         icon={MoreIcon}
         label={actions.labels.detailLevelMenu as Label}
@@ -412,6 +424,7 @@ function DefaultDetailsMenu() {
               onFocus={() => setFocusedLevel(availableLevel)}
               onClick={() => {
                 setLevel(availableLevel);
+                if (availableLevel !== "minimum") openDetails();
                 closeMenu(true);
               }}
             >
@@ -436,8 +449,11 @@ function DefaultDetailsToggle({
   label: string;
   toggleDetails: () => void;
 }) {
+  const { detailsTriggerRef } = usePhotoDetails();
+
   return (
     <IconButton
+      ref={detailsTriggerRef}
       className={expanded ? "rpdl__toolbar-button--active" : undefined}
       data-testid="photo-details-toggle"
       icon={DetailsIcon}
@@ -449,9 +465,10 @@ function DefaultDetailsToggle({
 
 export function PhotoDetailsToolbarControl() {
   const { currentIndex } = useLightboxState();
-  const { level, settings, toggleDetails } = usePhotoDetails();
+  const { detailsOpen, detailsTriggerRef, level, settings, toggleDetails } =
+    usePhotoDetails();
   const actions = resolveViewerActions(settings.viewerActions);
-  const expanded = level !== "minimum";
+  const expanded = detailsOpen && level !== "minimum";
   const label = expanded
     ? actions.labels.hideDetails
     : actions.labels.showDetails;
@@ -461,6 +478,7 @@ export function PhotoDetailsToolbarControl() {
       level,
       expanded,
       label,
+      buttonRef: detailsTriggerRef,
       onClick: toggleDetails,
     }) as ReactNode;
   }

@@ -79,9 +79,9 @@ export function PhotoGallery() {
           <span aria-hidden="true">⌄</span>
         </label>
         <p>
-          The chosen preset follows you through the gallery. Inside the viewer,
-          use the three-dot menu to change it, or use Share and Zoom without
-          leaving the frame.
+          The chosen preset follows you through the gallery. Details stay closed
+          until you choose a view from the three-dot menu, then open on the
+          right—or full screen on a phone.
         </p>
       </div>
 
