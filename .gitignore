@@ -1,6 +1,7 @@
 node_modules
 .next
 .open-next
+.sites-worker
 dist
 coverage
 playwright-report

@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test",
     "build:cloudflare": "next build && opennextjs-cloudflare build --skipNextBuild",
+    "build:sites": "npm run build:cloudflare && wrangler deploy --dry-run --outdir .sites-worker",
     "preview:cloudflare": "npm run build:cloudflare && opennextjs-cloudflare preview",
     "deploy:cloudflare": "npm run build:cloudflare && opennextjs-cloudflare deploy"
   },

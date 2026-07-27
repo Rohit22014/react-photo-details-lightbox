@@ -33,10 +33,16 @@ Useful checks:
 
 ```bash
 npm run build
+npm run build:sites
 npm run typecheck
 npm test
 npm run test:e2e
 ```
+
+`npm run build:sites` runs the OpenNext build and Wrangler's final bundling
+pass. When preparing a Sites archive, stage
+`apps/docs/.sites-worker/worker.js` as `.open-next/worker.js` alongside
+`.open-next/assets`; the raw OpenNext loader is not the final Worker bundle.
 
 ## Installation
 
