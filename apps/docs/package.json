@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "test:e2e": "playwright test",
     "build:cloudflare": "next build && opennextjs-cloudflare build --skipNextBuild",
     "build:sites": "npm run build:cloudflare && wrangler deploy --dry-run --outdir .sites-worker",

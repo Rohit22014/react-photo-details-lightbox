@@ -17,7 +17,7 @@ A photography-first metadata inspector for [Yet Another React Lightbox](https://
 
 ## Run this workspace
 
-Requirements: Node.js 20.9 or newer and npm.
+Requirements: Node.js 22 or newer and npm.
 
 ```bash
 npm install
@@ -40,9 +40,10 @@ npm run test:e2e
 ```
 
 `npm run build:sites` runs the OpenNext build and Wrangler's final bundling
-pass. When preparing a Sites archive, stage
-`apps/docs/.sites-worker/worker.js` as `.open-next/worker.js` alongside
-`.open-next/assets`; the raw OpenNext loader is not the final Worker bundle.
+pass, validates the final Worker, and creates a ready-to-upload Sites archive
+in the operating system's temporary directory. The packager stages
+`apps/docs/.sites-worker/worker.js` as `.open-next/worker.js` alongside the
+static assets; the raw OpenNext loader is not the final Worker bundle.
 
 ## Installation
 

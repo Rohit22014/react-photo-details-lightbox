@@ -12,7 +12,8 @@
     "build:package": "npm run build --workspace react-photo-details-lightbox",
     "build:site": "npm run build --workspace @photo-details/docs",
     "build:cloudflare": "npm run build:package && npm run build:cloudflare --workspace @photo-details/docs",
-    "build:sites": "npm run build:package && npm run build:sites --workspace @photo-details/docs",
+    "build:sites": "npm run build:package && npm run build:sites --workspace @photo-details/docs && node scripts/package-sites.mjs",
+    "package:sites": "node scripts/package-sites.mjs",
     "dev": "npm run dev --workspace @photo-details/docs",
     "lint": "npm run lint --workspaces --if-present",
     "test": "npm run test --workspace react-photo-details-lightbox",
@@ -20,6 +21,6 @@
     "typecheck": "npm run typecheck --workspaces --if-present"
   },
   "engines": {
-    "node": ">=20.9.0"
+    "node": ">=22.0.0"
   }
 }
