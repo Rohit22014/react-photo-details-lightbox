@@ -18,7 +18,7 @@
   "dependencies": {
     "next": "^16.2.12",
     "react": "19.2.0",
-    "react-dom": "19.2.0",
+    "react-dom": "19.2.8",
     "react-photo-details-lightbox": "*",
     "yet-another-react-lightbox": "3.32.1"
   },
