@@ -158,8 +158,8 @@ export default function HomePage() {
             <h2>Look closer.</h2>
           </div>
           <p>
-            Open any frame, then share, zoom or use the three-dot menu to open
-            exactly how much photographic context you want to see.
+            Open any frame, then share, zoom or press the three dots to open its
+            photographic information immediately.
           </p>
         </div>
         <PhotoGallery />
@@ -176,8 +176,8 @@ export default function HomePage() {
           <p>
             Use the ready-made component or add the Photo Details plugin to your
             existing Yet Another React Lightbox setup. The wrapper includes
-            Share, Zoom and the detail menu; typed metadata, labels, render
-            slots and CSS variables make it yours.
+            Share, Zoom and the direct details button; typed metadata, labels,
+            render slots and CSS variables make it yours.
           </p>
           <ul className="api-points">
             <li>

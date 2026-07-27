@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type KeyboardEvent as ReactKeyboardEvent,
-  type ReactNode,
-} from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   IconButton,
   createIcon,
@@ -17,11 +10,7 @@ import {
   type SlideImage,
 } from "yet-another-react-lightbox";
 import { usePhotoDetails } from "./context";
-import type {
-  DetailLevel,
-  PhotoShareData,
-  PhotoViewerActionLabels,
-} from "./types";
+import type { PhotoShareData, PhotoViewerActionLabels } from "./types";
 import { resolveViewerActions } from "./viewer-actions";
 
 const DetailsIcon = createIcon(
@@ -30,7 +19,7 @@ const DetailsIcon = createIcon(
 );
 
 const MoreIcon = createIcon(
-  "PhotoDetailsMenu",
+  "PhotoDetailsMore",
   <>
     <circle cx="5" cy="12" r="1.6" />
     <circle cx="12" cy="12" r="1.6" />
@@ -241,212 +230,17 @@ export function PhotoShareButton() {
   );
 }
 
-function focusOption(
-  options: Map<DetailLevel, HTMLButtonElement>,
-  levels: readonly DetailLevel[],
-  index: number,
-): DetailLevel | undefined {
-  const level = levels[(index + levels.length) % levels.length];
-  if (level) options.get(level)?.focus();
-  return level;
-}
-
-function DefaultDetailsMenu() {
-  const { currentIndex } = useLightboxState();
-  const {
-    availableLevels,
-    detailsTriggerRef,
-    detailsOpen,
-    labels,
-    level,
-    openDetails,
-    setLevel,
-    settings,
-  } = usePhotoDetails();
-  const actions = resolveViewerActions(settings.viewerActions);
-  const [menuState, setMenuState] = useState({
-    index: currentIndex,
-    open: false,
-  });
-  const [focusedLevel, setFocusedLevel] = useState<DetailLevel>(level);
-  const open = menuState.open && menuState.index === currentIndex;
-  const panelVisible = detailsOpen && level !== "minimum";
-  const triggerRef = detailsTriggerRef;
-  const menuRef = useRef<HTMLDivElement>(null);
-  const optionRefs = useRef(new Map<DetailLevel, HTMLButtonElement>());
-  const generatedId = useId();
-  const menuId = `${generatedId}-detail-menu`;
-
-  useEffect(() => {
-    if (!open) return;
-    optionRefs.current.get(focusedLevel)?.focus();
-
-    const ownerDocument = triggerRef.current?.ownerDocument;
-    if (!ownerDocument) return;
-    const OwnerNode = ownerDocument.defaultView?.Node;
-
-    const onPointerDown = (event: PointerEvent) => {
-      if (
-        OwnerNode &&
-        event.target instanceof OwnerNode &&
-        !menuRef.current?.contains(event.target) &&
-        !triggerRef.current?.contains(event.target)
-      ) {
-        setMenuState({ index: currentIndex, open: false });
-      }
-    };
-
-    ownerDocument.addEventListener("pointerdown", onPointerDown, true);
-    return () =>
-      ownerDocument.removeEventListener("pointerdown", onPointerDown, true);
-  }, [currentIndex, focusedLevel, open, triggerRef]);
-
-  const closeMenu = (restoreFocus: boolean) => {
-    setMenuState({ index: currentIndex, open: false });
-    if (restoreFocus) triggerRef.current?.focus();
-  };
-
-  const focusAdjacentToolbarControl = (backward: boolean) => {
-    const trigger = triggerRef.current;
-    const toolbar = trigger?.closest(".yarl__toolbar");
-    if (!trigger || !toolbar) {
-      trigger?.focus();
-      return;
-    }
-
-    const controls = Array.from(
-      toolbar.querySelectorAll<HTMLButtonElement>("button:not(:disabled)"),
-    ).filter((control) => !menuRef.current?.contains(control));
-    const triggerIndex = controls.indexOf(trigger);
-    const target = controls[triggerIndex + (backward ? -1 : 1)];
-    (target ?? trigger).focus();
-  };
-
-  const onMenuKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
-    const activeIndex = availableLevels.findIndex(
-      (availableLevel) =>
-        optionRefs.current.get(availableLevel) ===
-        event.currentTarget.ownerDocument.activeElement,
-    );
-    const currentOptionIndex =
-      activeIndex >= 0 ? activeIndex : availableLevels.indexOf(focusedLevel);
-
-    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-      event.preventDefault();
-      event.stopPropagation();
-      const nextLevel = focusOption(
-        optionRefs.current,
-        availableLevels,
-        currentOptionIndex + (event.key === "ArrowDown" ? 1 : -1),
-      );
-      if (nextLevel) setFocusedLevel(nextLevel);
-    } else if (event.key === "Home" || event.key === "End") {
-      event.preventDefault();
-      event.stopPropagation();
-      const nextLevel = focusOption(
-        optionRefs.current,
-        availableLevels,
-        event.key === "Home" ? 0 : availableLevels.length - 1,
-      );
-      if (nextLevel) setFocusedLevel(nextLevel);
-    } else if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
-      event.preventDefault();
-      event.stopPropagation();
-    } else if (event.key === "Escape") {
-      event.preventDefault();
-      event.stopPropagation();
-      closeMenu(true);
-    } else if (event.key === "Tab") {
-      event.preventDefault();
-      event.stopPropagation();
-      setMenuState({ index: currentIndex, open: false });
-      focusAdjacentToolbarControl(event.shiftKey);
-    }
-  };
-
-  return (
-    <div
-      className="rpdl__details-menu-root"
-      onBlur={(event) => {
-        if (
-          open &&
-          (!event.relatedTarget ||
-            !event.currentTarget.contains(event.relatedTarget as Node))
-        ) {
-          setMenuState({ index: currentIndex, open: false });
-        }
-      }}
-    >
-      <IconButton
-        ref={triggerRef}
-        aria-controls={open ? menuId : undefined}
-        aria-expanded={open}
-        aria-haspopup="menu"
-        className={
-          open || panelVisible ? "rpdl__toolbar-button--active" : undefined
-        }
-        data-details-open={panelVisible}
-        data-testid="photo-details-menu-button"
-        icon={MoreIcon}
-        label={actions.labels.detailLevelMenu as Label}
-        onClick={() => {
-          if (!open) setFocusedLevel(level);
-          setMenuState({ index: currentIndex, open: !open });
-        }}
-      />
-      {open ? (
-        <div
-          ref={menuRef}
-          aria-label={actions.labels.detailLevelMenu}
-          className="rpdl__details-menu"
-          id={menuId}
-          role="menu"
-          onKeyDown={onMenuKeyDown}
-          onPointerDown={(event) => event.stopPropagation()}
-          onWheel={(event) => event.stopPropagation()}
-        >
-          <span aria-hidden="true" className="rpdl__details-menu-title">
-            {actions.labels.detailLevelMenuTitle}
-          </span>
-          {availableLevels.map((availableLevel) => (
-            <button
-              ref={(node) => {
-                if (node) optionRefs.current.set(availableLevel, node);
-                else optionRefs.current.delete(availableLevel);
-              }}
-              aria-checked={level === availableLevel}
-              className="rpdl__details-menu-option"
-              data-level={availableLevel}
-              key={availableLevel}
-              role="menuitemradio"
-              tabIndex={focusedLevel === availableLevel ? 0 : -1}
-              type="button"
-              onFocus={() => setFocusedLevel(availableLevel)}
-              onClick={() => {
-                setLevel(availableLevel);
-                if (availableLevel !== "minimum") openDetails();
-                closeMenu(true);
-              }}
-            >
-              <span>{labels[availableLevel]}</span>
-              <span aria-hidden="true" className="rpdl__details-menu-check">
-                ✓
-              </span>
-            </button>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function DefaultDetailsToggle({
+function DefaultDetailsButton({
   expanded,
+  icon,
   label,
+  testId,
   toggleDetails,
 }: {
   expanded: boolean;
+  icon: typeof DetailsIcon;
   label: string;
+  testId: string;
   toggleDetails: () => void;
 }) {
   const { detailsTriggerRef } = usePhotoDetails();
@@ -454,9 +248,11 @@ function DefaultDetailsToggle({
   return (
     <IconButton
       ref={detailsTriggerRef}
+      aria-expanded={expanded}
       className={expanded ? "rpdl__toolbar-button--active" : undefined}
-      data-testid="photo-details-toggle"
-      icon={DetailsIcon}
+      data-details-open={expanded}
+      data-testid={testId}
+      icon={icon}
       label={label as Label}
       onClick={toggleDetails}
     />
@@ -464,12 +260,11 @@ function DefaultDetailsToggle({
 }
 
 export function PhotoDetailsToolbarControl() {
-  const { currentIndex } = useLightboxState();
   const { detailsOpen, detailsTriggerRef, level, settings, toggleDetails } =
     usePhotoDetails();
   const actions = resolveViewerActions(settings.viewerActions);
   const expanded = detailsOpen && level !== "minimum";
-  const label = expanded
+  const fallbackLabel = expanded
     ? actions.labels.hideDetails
     : actions.labels.showDetails;
 
@@ -477,20 +272,32 @@ export function PhotoDetailsToolbarControl() {
     return settings.renderDetails.toolbarButton({
       level,
       expanded,
-      label,
+      label: fallbackLabel,
       buttonRef: detailsTriggerRef,
       onClick: toggleDetails,
     }) as ReactNode;
   }
 
   if (actions.detailLevelMenu && settings.allowDetailLevelChange !== false) {
-    return <DefaultDetailsMenu key={currentIndex} />;
+    return (
+      <DefaultDetailsButton
+        expanded={expanded}
+        icon={MoreIcon}
+        label={
+          expanded ? actions.labels.hideDetails : actions.labels.detailLevelMenu
+        }
+        testId="photo-details-button"
+        toggleDetails={toggleDetails}
+      />
+    );
   }
 
   return (
-    <DefaultDetailsToggle
+    <DefaultDetailsButton
       expanded={expanded}
-      label={label}
+      icon={DetailsIcon}
+      label={fallbackLabel}
+      testId="photo-details-toggle"
       toggleDetails={toggleDetails}
     />
   );

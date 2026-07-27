@@ -18,6 +18,7 @@ export interface PhotoShareData {
 
 export interface PhotoViewerActionLabels {
   detailLevelMenu: string;
+  /** @deprecated The three-dot control no longer opens an intermediate menu. */
   detailLevelMenuTitle: string;
   hideDetails: string;
   share: string;
@@ -42,7 +43,7 @@ export interface PhotoViewerActions {
    */
   zoom?: boolean;
   /**
-   * Use the three-dot toolbar menu to select the photo detail level.
+   * Show the three-dot toolbar button that directly toggles photo details.
    *
    * @default true
    */

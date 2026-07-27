@@ -87,9 +87,9 @@ All metadata is optional. Empty fields and groups are left out of the inspector.
 
 ## Viewer actions
 
-The wrapper shows Share, Zoom in/out, a three-dot detail-level menu, and Close
-by default. It installs YARL's Zoom plugin automatically and avoids adding it a
-second time when the same plugin reference is already present.
+The wrapper shows Share, Zoom in/out, a three-dot Photo information button, and
+Close by default. It installs YARL's Zoom plugin automatically and avoids adding
+it a second time when the same plugin reference is already present.
 
 ```tsx
 <PhotoDetailsLightbox
@@ -105,16 +105,19 @@ second time when the same plugin reference is already present.
 ```
 
 Each option defaults to `true`. With no custom `toolbar.buttons`, their order is
-Share, Zoom in/out, details, then Close. Set an option to `false`, or pass
-`viewerActions={false}` to disable Share and automatic Zoom installation and
-use the original show/hide details toggle. A `Zoom` plugin explicitly supplied
-through `plugins` remains enabled. `allowDetailLevelChange={false}` also
-replaces the three-dot menu with that toggle.
+Share, Zoom in/out, details, then Close. Set `share: false` to remove Share,
+`zoom: false` to skip automatic Zoom installation, or
+`detailLevelMenu: false` to use the original show/hide details toggle.
+`viewerActions={false}` applies all three changes. A `Zoom` plugin explicitly
+supplied through `plugins` remains enabled. `allowDetailLevelChange={false}`
+also replaces the three-dot button with that toggle.
 
 The selected level and panel visibility are independent. The inspector starts
-closed; choosing Information, Detailed, or Custom from the three-dot menu opens
-a right-side desktop drawer or a full-screen phone view. Choosing Minimum or
-the panel's close button hides it while preserving the last non-minimum mode.
+closed; pressing the three-dot button opens the current level immediately in a
+right-side desktop drawer or a full-screen phone view. Information, Detailed,
+and Custom remain available from the selector inside the panel. Choosing
+Minimum or the panel's close button hides it while preserving the last
+non-minimum mode.
 
 Sharing uses the current page URL without its query string or fragment by
 default, plus `photoMetadata.title` and `photoMetadata.caption` when present.
@@ -159,8 +162,7 @@ Labels are deliberately separated:
   }}
   viewerActions={{
     labels: {
-      detailLevelMenu: "Choose photo information",
-      detailLevelMenuTitle: "Photo information",
+      detailLevelMenu: "Open photo information",
       hideDetails: "Hide photo information",
       share: "Share this photograph",
       shareCopied: "Photo link copied.",
@@ -174,8 +176,8 @@ Labels are deliberately separated:
 
 `detailLabels` names this package's four modes. `lightboxLabels` is forwarded
 to standard YARL controls. The older `labels` prop remains a deprecated alias
-for detail-level labels. `viewerActions.labels` can also localize the visual
-menu title and the show/hide fallback labels.
+for detail-level labels. `viewerActions.labels` can also localize the direct
+three-dot action and the show/hide fallback labels.
 
 If the application supplies YARL's official Share plugin, set
 `viewerActions={{ share: false }}` to avoid showing both Share controls. Use the

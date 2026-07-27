@@ -80,8 +80,8 @@ export function PhotoGallery() {
         </label>
         <p>
           The chosen preset follows you through the gallery. Details stay closed
-          until you choose a view from the three-dot menu, then open on the
-          right—or full screen on a phone.
+          until you press the three dots, then open immediately on the right—or
+          full screen on a phone.
         </p>
       </div>
 

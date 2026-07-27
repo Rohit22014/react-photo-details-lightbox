@@ -300,14 +300,14 @@ await act(async () => {
 const shareButton = document.querySelector('[aria-label="Share photo"]');
 const zoomInButton = document.querySelector('[aria-label="Zoom in"]');
 const zoomOutButton = document.querySelector('[aria-label="Zoom out"]');
-const detailsMenuButton = document.querySelector(
-  '[data-testid="photo-details-menu-button"]',
+const detailsButton = document.querySelector(
+  '[data-testid="photo-details-button"]',
 );
 if (
   !shareButton ||
   !zoomInButton ||
   !zoomOutButton ||
-  !detailsMenuButton
+  !detailsButton
 ) {
   throw new Error("The lightbox viewer actions did not mount in the DOM.");
 }
@@ -324,16 +324,7 @@ if (copiedUrl !== "http://localhost/") {
 }
 
 await act(async () => {
-  detailsMenuButton.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-});
-const detailsMenu = document.querySelector('[role="menu"]');
-const detailOptions = document.querySelectorAll('[role="menuitemradio"]');
-if (!detailsMenu || detailOptions.length !== 3) {
-  throw new Error("The photo detail-level menu did not mount in the DOM.");
-}
-
-await act(async () => {
-  detailOptions[2]?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+  detailsButton.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 });
 const detailsPanel = document.querySelector(
   '[data-testid="metadata-inspector"]',
@@ -348,7 +339,10 @@ if (
   !closeDetailsButton ||
   detailsBody.getAttribute("tabindex") !== "0"
 ) {
-  throw new Error("The three-dot menu did not open the photo details panel.");
+  throw new Error("The three-dot button did not open photo details directly.");
+}
+if (document.querySelector('[role="menu"]')) {
+  throw new Error("The three-dot button unexpectedly opened a chooser menu.");
 }
 
 await act(async () => {

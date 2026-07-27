@@ -4,7 +4,7 @@ import type {
 } from "./types";
 
 export const defaultViewerActionLabels: PhotoViewerActionLabels = {
-  detailLevelMenu: "Choose photo detail level",
+  detailLevelMenu: "Photo information",
   detailLevelMenuTitle: "Photo details",
   hideDetails: "Hide photo details",
   share: "Share photo",

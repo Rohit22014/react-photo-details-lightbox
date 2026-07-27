@@ -21,13 +21,9 @@ const histogramFixture = `
   </svg>
 `;
 
-async function openPhotoDetails(page: Page, level = "Detailed") {
-  await page.getByTestId("photo-details-menu-button").click();
-  const menu = page.getByRole("menu", {
-    name: "Choose photo detail level",
-  });
-  await expect(menu).toBeVisible();
-  await menu.getByRole("menuitemradio", { name: level }).click();
+async function openPhotoDetails(page: Page) {
+  await page.getByTestId("photo-details-button").click();
+  await expect(page.getByRole("menu")).toHaveCount(0);
   const inspector = page.getByTestId("metadata-inspector");
   await expect(inspector).toBeVisible();
   return inspector;
@@ -113,7 +109,7 @@ test("opens a photograph and closes the lightbox", async ({ page }) => {
       "Share photo",
       "Zoom in",
       "Zoom out",
-      "Choose photo detail level",
+      "Photo information",
       "Close",
     ]);
   await expect(page.getByTestId("metadata-inspector")).toBeHidden();
@@ -139,22 +135,18 @@ test("open lightbox has no serious or critical accessibility violations", async 
   page,
 }) => {
   await page.getByTestId("gallery-card-0").click();
-  await page.getByTestId("photo-details-menu-button").click();
-  const menu = page.getByRole("menu", {
-    name: "Choose photo detail level",
-  });
-  await expect(menu).toBeVisible();
 
-  const menuResults = await new AxeBuilder({ page })
+  const closedResults = await new AxeBuilder({ page })
     .include(".yarl__portal")
     .analyze();
-  const menuViolations = menuResults.violations.filter(
+  const closedViolations = closedResults.violations.filter(
     ({ impact }) => impact === "serious" || impact === "critical",
   );
-  expect(menuViolations, JSON.stringify(menuViolations, null, 2)).toEqual([]);
+  expect(closedViolations, JSON.stringify(closedViolations, null, 2)).toEqual(
+    [],
+  );
 
-  await menu.getByRole("menuitemradio", { name: "Detailed" }).click();
-  await expect(page.getByTestId("metadata-inspector")).toBeVisible();
+  await openPhotoDetails(page);
   await expect(page.getByTestId("rgb-histogram-graph")).toBeVisible();
 
   const panelResults = await new AxeBuilder({ page })
@@ -195,52 +187,30 @@ test("shares the active photograph through the Web Share API", async ({
   ).toBeVisible();
 });
 
-test("supports keyboard interaction in the photo detail menu", async ({
-  page,
-}) => {
+test("opens photo information directly from the keyboard", async ({ page }) => {
   await page.getByTestId("gallery-card-0").click();
 
-  const trigger = page.getByTestId("photo-details-menu-button");
-  await expect(trigger).toHaveAccessibleName("Choose photo detail level");
+  const trigger = page.getByTestId("photo-details-button");
+  await expect(trigger).toHaveAccessibleName("Photo information");
+  await expect(trigger).not.toHaveAttribute("aria-haspopup");
+  await expect(trigger).toHaveAttribute("aria-expanded", "false");
   await trigger.focus();
   await trigger.press("Enter");
   await expect(trigger).toHaveAttribute("aria-expanded", "true");
-
-  const menu = page.getByRole("menu", {
-    name: "Choose photo detail level",
-  });
-  const detailed = menu.getByRole("menuitemradio", { name: "Detailed" });
-  const custom = menu.getByRole("menuitemradio", { name: "Custom" });
-  await expect(menu.getByRole("menuitemradio")).toHaveCount(4);
-  await expect(detailed).toHaveAttribute("aria-checked", "true");
-  await expect(detailed).toBeFocused();
-
-  await detailed.press("ArrowDown");
-  await expect(custom).toBeFocused();
-  await custom.press("Enter");
-  await expect(menu).toBeHidden();
+  await expect(page.getByRole("menu")).toHaveCount(0);
+  await expect(page.getByTestId("metadata-inspector")).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Close photo details" }),
   ).toBeFocused();
-  await expect(trigger).toHaveAttribute("aria-expanded", "false");
-  await expect(page.getByTestId("metadata-inspector")).toContainText(
-    "From the field",
-  );
   await expect(page.getByTestId("demo-detail-level-select")).toHaveValue(
-    "custom",
+    "detailed",
   );
 
   await page.keyboard.press("Escape");
   await expect(page.getByTestId("metadata-inspector")).toBeHidden();
   await expect(trigger).toBeFocused();
-  await expect(trigger).toHaveAccessibleName("Choose photo detail level");
-  await expect(page.getByRole("button", { name: "Close" })).toBeVisible();
-
-  await trigger.press("Enter");
-  await expect(menu).toBeVisible();
-  await page.keyboard.press("Escape");
-  await expect(menu).toBeHidden();
-  await expect(trigger).toBeFocused();
+  await expect(trigger).toHaveAccessibleName("Photo information");
+  await expect(trigger).toHaveAttribute("aria-expanded", "false");
   await expect(page.getByRole("button", { name: "Close" })).toBeVisible();
 
   await page.keyboard.press("Escape");
@@ -271,19 +241,6 @@ test("zooms the active photograph with the toolbar controls", async ({
   await expect
     .poll(async () => (await image.boundingBox())?.width ?? 0)
     .toBeGreaterThan((initialBox?.width ?? 0) * 1.2);
-});
-
-test("renders a stable photo detail menu", async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name.includes("mobile"));
-
-  await page.getByTestId("gallery-card-0").click();
-  await page.getByTestId("photo-details-menu-button").click();
-
-  await expect(
-    page.getByRole("menu", { name: "Choose photo detail level" }),
-  ).toHaveScreenshot("photo-detail-menu-dark.png", {
-    animations: "disabled",
-  });
 });
 
 test("shows an accessible RGB histogram only in detailed mode", async ({
@@ -368,7 +325,7 @@ test("switches between minimum, information, detailed, and custom modes", async 
 
   await level.selectOption("information");
   await photograph.click();
-  await openPhotoDetails(page, "Information");
+  await openPhotoDetails(page);
   await expect(inspector).toBeVisible();
   await expect(inspector).toContainText("Light Across the Ridge");
   await page.getByRole("button", { name: "Close photo details" }).click();
@@ -384,7 +341,7 @@ test("switches between minimum, information, detailed, and custom modes", async 
   await level.selectOption("custom");
   await expect(level).toHaveValue("custom");
   await photograph.click();
-  await openPhotoDetails(page, "Custom");
+  await openPhotoDetails(page);
   await expect(inspector).toBeVisible();
   await expect(inspector).toContainText("From the field");
 });
@@ -466,63 +423,18 @@ test("opens the desktop photo details drawer against the right edge", async ({
   );
 });
 
-test("keeps the three-dot menu inside an RTL desktop viewport", async ({
-  page,
-}, testInfo) => {
-  test.skip(testInfo.project.name.includes("mobile"));
-
-  await page.getByTestId("gallery-card-0").click();
-  await page.locator(".yarl__portal").evaluate((element) => {
-    element.setAttribute("dir", "rtl");
-  });
-  await page.getByTestId("photo-details-menu-button").click();
-
-  const menu = page.getByRole("menu", {
-    name: "Choose photo detail level",
-  });
-  await expect(menu).toBeVisible();
-  const viewport = page.viewportSize();
-  const menuBox = await menu.boundingBox();
-  expect(viewport).not.toBeNull();
-  expect(menuBox).not.toBeNull();
-  expect(menuBox?.x ?? -1).toBeGreaterThanOrEqual(0);
-  expect((menuBox?.x ?? 0) + (menuBox?.width ?? 0)).toBeLessThanOrEqual(
-    viewport?.width ?? 0,
-  );
-});
-
-test("keeps mobile toolbar actions and the detail menu within reach", async ({
+test("keeps the mobile three-dot action within reach and opens directly", async ({
   page,
 }, testInfo) => {
   test.skip(!testInfo.project.name.includes("mobile"));
 
   await page.getByTestId("gallery-card-0").click();
-  const trigger = page.getByTestId("photo-details-menu-button");
+  const trigger = page.getByTestId("photo-details-button");
   const triggerBox = await trigger.boundingBox();
   expect(triggerBox?.width ?? 0).toBeGreaterThanOrEqual(44);
   expect(triggerBox?.height ?? 0).toBeGreaterThanOrEqual(44);
 
   await trigger.click();
-  const menu = page.getByRole("menu", {
-    name: "Choose photo detail level",
-  });
-  await expect(menu).toBeVisible();
-
-  const viewport = page.viewportSize();
-  const menuBox = await menu.boundingBox();
-  expect(viewport).not.toBeNull();
-  expect(menuBox).not.toBeNull();
-  expect(menuBox?.x ?? -1).toBeGreaterThanOrEqual(0);
-  expect(menuBox?.y ?? -1).toBeGreaterThanOrEqual(0);
-  expect((menuBox?.x ?? 0) + (menuBox?.width ?? 0)).toBeLessThanOrEqual(
-    viewport?.width ?? 0,
-  );
-  expect((menuBox?.y ?? 0) + (menuBox?.height ?? 0)).toBeLessThanOrEqual(
-    viewport?.height ?? 0,
-  );
-
-  for (const option of await menu.getByRole("menuitemradio").all()) {
-    const optionBox = await option.boundingBox();
-    expect(optionBox?.height ?? 0).toBeGreaterThanOrEqual(44);
-  }
+  await expect(page.getByRole("menu")).toHaveCount(0);
+  await expect(page.getByTestId("metadata-inspector")).toBeVisible();
 });

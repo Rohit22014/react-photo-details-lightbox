@@ -18,10 +18,12 @@ and this project follows [Semantic Versioning](https://semver.org/).
   isolation, and accessible tonal summaries.
 - Wrapper-default Share and Zoom actions, including native sharing with a
   copy-link fallback and per-slide share payloads.
-- An accessible three-dot menu for switching detail levels, with configurable
-  viewer-action, detail-level, and standard lightbox labels.
+- An accessible three-dot button that opens Photo information directly, with
+  detail-level switching kept inside the panel.
+- Existing `detailLevelMenu` configuration and label names remain supported,
+  but now configure the direct button; `detailLevelMenuTitle` is deprecated.
 - Independent controlled and uncontrolled details visibility, closed by
-  default and opened through the detail-level menu.
+  default and opened directly from the three-dot button.
 - TypeScript, unit, browser, and accessibility checks.
 
 [Unreleased]: https://github.com/Rohit22014/react-photo-details-lightbox/commits/main

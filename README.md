@@ -15,7 +15,7 @@ A photography-first metadata inspector for [Yet Another React Lightbox](https://
 
 - Four presentation levels: `minimum`, `information`, `detailed`, and `custom`
 - An on-demand right-side inspector on desktop and full-screen details view on phones
-- Built-in Share, Zoom, and three-dot detail-level controls in the wrapper
+- Built-in Share, Zoom, and a direct three-dot Photo information control
 - Dark, light, and system themes with CSS custom properties
 - A convenient `PhotoDetailsLightbox` wrapper and a composable `PhotoDetails` YARL plugin
 - Typed metadata and custom section schemas
@@ -140,10 +140,10 @@ Metadata is optional. Missing values and empty sections are omitted instead of b
 
 ## Viewer actions
 
-`PhotoDetailsLightbox` includes Share, Zoom in/out, a three-dot detail-level
-menu, and Close controls by default. The wrapper also installs YARL's Zoom
-plugin unless the application already supplied it. Configure or disable the
-defaults with `viewerActions`:
+`PhotoDetailsLightbox` includes Share, Zoom in/out, a three-dot Photo
+information button, and Close controls by default. The wrapper also installs
+YARL's Zoom plugin unless the application already supplied it. Configure or
+disable the defaults with `viewerActions`:
 
 ```tsx
 <PhotoDetailsLightbox
@@ -162,18 +162,20 @@ All three viewer-action options default to `true`. When `toolbar.buttons` is
 not supplied, the wrapper orders the controls as Share, Zoom in/out, details,
 and Close.
 
-The inspector starts closed, independently of the selected detail level. Open
-the three-dot menu and choose Information, Detailed, or Custom to reveal it as
-a right-side drawer on desktop or a full-screen details view on phones.
-Choosing Minimum or the panel's close button hides it without discarding the
-last non-minimum selection.
+The inspector starts closed, independently of the selected detail level.
+Pressing the three-dot button opens it immediately as a right-side drawer on
+desktop or a full-screen details view on phones. Information, Detailed, and
+Custom remain available from the selector inside the panel. Choosing Minimum
+or the panel's close button hides it without discarding the last non-minimum
+selection.
 
-Set an individual action to `false`, or use `viewerActions={false}` to disable
-Share and automatic Zoom installation and return the details control to a
-simple show/hide toggle. A `Zoom` plugin supplied explicitly through `plugins`
-remains enabled. Setting `allowDetailLevelChange={false}` also uses the
-show/hide toggle. The `custom` menu choice appears only when `customSections`
-contains at least one section.
+Set `share: false` to remove Share, `zoom: false` to skip automatic Zoom
+installation, or `detailLevelMenu: false` to use the simple show/hide details
+toggle. `viewerActions={false}` applies all three changes. A `Zoom` plugin
+supplied explicitly through `plugins` remains enabled. Setting
+`allowDetailLevelChange={false}` also uses the show/hide toggle. The `custom`
+selector choice appears only when `customSections` contains at least one
+section.
 
 The Share control resolves each image slide as follows:
 
@@ -215,8 +217,7 @@ and feedback:
   }}
   viewerActions={{
     labels: {
-      detailLevelMenu: "Choose photo information",
-      detailLevelMenuTitle: "Photo information",
+      detailLevelMenu: "Open photo information",
       hideDetails: "Hide photo information",
       share: "Share this photograph",
       shareCopied: "Photo link copied.",
@@ -228,8 +229,8 @@ and feedback:
 
 The legacy `labels` prop remains an alias for detail-level labels. New wrapper
 integrations should use `detailLabels`; `lightboxLabels` is the prop forwarded
-to YARL. `viewerActions.labels` can also localize the visual menu title and the
-show/hide fallback labels.
+to YARL. `viewerActions.labels` can also localize the direct three-dot action
+and the show/hide fallback labels.
 
 If an application already uses YARL's official Share plugin, set
 `viewerActions={{ share: false }}` to keep only that control. The built-in
