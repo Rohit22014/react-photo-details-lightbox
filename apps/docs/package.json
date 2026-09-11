@@ -16,7 +16,7 @@
     "deploy:cloudflare": "npm run build:cloudflare && opennextjs-cloudflare deploy"
   },
   "dependencies": {
-    "next": "^16.2.12",
+    "next": "^16.3.4",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-photo-details-lightbox": "*",
@@ -30,6 +30,6 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "typescript": "^5.9.0",
-    "wrangler": "^4.58.0"
+    "wrangler": "^4.131.0"
   }
 }
